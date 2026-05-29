@@ -1,0 +1,18 @@
+app:
+  name: RADA
+  env: dev
+  log_level: INFO
+
+runtime:
+  event_bus_mode: inmemory  # redis | inmemory
+
+connections:
+  redis:
+    env_var: RADA_REDIS_URL
+    url: redis://localhost:6379/0
+  postgres:
+    env_var: RADA_DATABASE_URL
+    url: postgresql+asyncpg://rada:rada@localhost:5432/rada
+  sqlite_fallback:
+    env_var: RADA_SQLITE_URL
+    url: sqlite+aiosqlite:///./rada.db
