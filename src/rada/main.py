@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-import asyncio
 import os
 from dataclasses import dataclass
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 
 from rada.core.decision_loop import DecisionLoop, HoldPolicy, NoOpReasoner, PassThroughRiskOptimizer
+from rada.data.bus import build_event_bus
 from rada.data.ingestion import synthetic_market_events
 from rada.data.storage import InMemoryDecisionStore, SQLiteDecisionStore
-from rada.schemas import Decision, MarketEvent
+from rada.schemas import Decision
+from rada.utils.metrics import get_metrics_snapshot, record_decision_processed, render_prometheus_text
 
 
 @dataclass(slots=True)
@@ -20,48 +21,10 @@ class RuntimeSettings:
     sqlite_url: str = os.getenv("RADA_SQLITE_URL", "sqlite:///./rada.db")
 
 
-class InMemoryEventBus:
-    def __init__(self) -> None:
-        self._queue: asyncio.Queue[MarketEvent] = asyncio.Queue()
-
-    async def enqueue(self, event: MarketEvent) -> None:
-        await self._queue.put(event)
-
-    async def dequeue(self) -> MarketEvent:
-        return await self._queue.get()
-
-
-class RedisEventBus:
-    """Minimal Redis event bus wrapper used only when explicitly enabled."""
-
-    def __init__(self, redis_url: str) -> None:
-        import redis.asyncio as redis
-
-        self._channel = "rada:events"
-        self._client = redis.from_url(redis_url)
-
-    async def enqueue(self, event: MarketEvent) -> None:
-        await self._client.rpush(self._channel, event.model_dump_json())
-
-    async def dequeue(self) -> MarketEvent:
-        _, payload = await self._client.blpop(self._channel)
-        return MarketEvent.model_validate_json(payload)
-
-
-async def _build_event_bus(settings: RuntimeSettings) -> InMemoryEventBus | RedisEventBus:
-    if settings.event_bus_mode.lower() == "redis":
-        redis_url = os.getenv("RADA_REDIS_URL", "redis://localhost:6379/0")
-        try:
-            return RedisEventBus(redis_url)
-        except Exception:
-            return InMemoryEventBus()
-    return InMemoryEventBus()
-
-
 async def run_bootstrap_once(event_count: int = 1, settings: RuntimeSettings | None = None) -> Decision:
     settings = settings or RuntimeSettings()
 
-    event_bus = await _build_event_bus(settings)
+    event_bus = await build_event_bus(settings.event_bus_mode)
     store = SQLiteDecisionStore(settings.sqlite_url)
 
     loop = DecisionLoop(
@@ -75,11 +38,13 @@ async def run_bootstrap_once(event_count: int = 1, settings: RuntimeSettings | N
         await event_bus.enqueue(event)
 
     first_event = await event_bus.dequeue()
-    return await loop.process_one(first_event)
+    decision = await loop.process_one(first_event)
+    record_decision_processed()
+    return decision
 
 
 async def run_bootstrap_once_inmemory(event_count: int = 1) -> Decision:
-    event_bus = InMemoryEventBus()
+    event_bus = await build_event_bus("inmemory")
     store = InMemoryDecisionStore()
 
     loop = DecisionLoop(
@@ -93,7 +58,9 @@ async def run_bootstrap_once_inmemory(event_count: int = 1) -> Decision:
         await event_bus.enqueue(event)
 
     first_event = await event_bus.dequeue()
-    return await loop.process_one(first_event)
+    decision = await loop.process_one(first_event)
+    record_decision_processed()
+    return decision
 
 
 app = FastAPI(title="RADA", version="0.1.0")
@@ -103,6 +70,18 @@ app = FastAPI(title="RADA", version="0.1.0")
 async def health() -> dict[str, str]:
     """Liveness probe for local/dev stack health checks."""
     return {"status": "ok"}
+
+
+@app.get("/metrics", tags=["system"])
+async def metrics() -> Response:
+    """Prometheus-style metrics snapshot."""
+    return Response(content=render_prometheus_text(), media_type="text/plain; version=0.0.4")
+
+
+@app.get("/metrics/json", tags=["system"])
+async def metrics_json() -> dict[str, int | float]:
+    """JSON metrics snapshot for debugging."""
+    return get_metrics_snapshot()
 
 
 @app.post("/bootstrap-demo", tags=["demo"])
