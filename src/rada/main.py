@@ -7,25 +7,54 @@ from dataclasses import dataclass
 
 from fastapi import FastAPI, Response
 
-from rada.core.decision_loop import DecisionLoop, HoldPolicy, NoOpReasoner, PassThroughRiskOptimizer
+from rada.core.decision_loop import (
+    DecisionLoop,
+    HoldPolicy,
+    NoOpReasoner,
+    PassThroughRiskOptimizer,
+)
 from rada.data.bus import build_event_bus
 from rada.data.ingestion import synthetic_market_events
 from rada.data.storage import InMemoryDecisionStore, SQLiteDecisionStore
+from rada.data.timescale_store import TimescaleDecisionStore
+from rada.interfaces import BaseDataStore
 from rada.schemas import Decision
-from rada.utils.metrics import get_metrics_snapshot, record_decision_processed, render_prometheus_text
+from rada.utils.metrics import (
+    get_metrics_snapshot,
+    record_decision_processed,
+    render_prometheus_text,
+)
 
 
 @dataclass(slots=True)
 class RuntimeSettings:
     event_bus_mode: str = os.getenv("RADA_EVENT_BUS_MODE", "inmemory")
+    data_store_mode: str = os.getenv("RADA_DATA_STORE_MODE", "sqlite")
+    database_url: str = os.getenv("RADA_DATABASE_URL", "postgresql://rada:rada@localhost:5432/rada")
     sqlite_url: str = os.getenv("RADA_SQLITE_URL", "sqlite:///./rada.db")
 
 
-async def run_bootstrap_once(event_count: int = 1, settings: RuntimeSettings | None = None) -> Decision:
+def build_data_store(settings: RuntimeSettings) -> BaseDataStore:
+    mode = settings.data_store_mode.lower().strip()
+
+    if mode == "inmemory":
+        return InMemoryDecisionStore()
+    if mode == "sqlite":
+        return SQLiteDecisionStore(settings.sqlite_url)
+    if mode == "timescale":
+        return TimescaleDecisionStore(settings.database_url)
+
+    raise ValueError(f"Unsupported RADA_DATA_STORE_MODE={settings.data_store_mode!r}")
+
+
+async def run_bootstrap_once(
+    event_count: int = 1,
+    settings: RuntimeSettings | None = None,
+) -> Decision:
     settings = settings or RuntimeSettings()
 
     event_bus = await build_event_bus(settings.event_bus_mode)
-    store = SQLiteDecisionStore(settings.sqlite_url)
+    store = build_data_store(settings)
 
     loop = DecisionLoop(
         reasoner=NoOpReasoner(),

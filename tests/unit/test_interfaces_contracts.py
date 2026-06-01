@@ -90,9 +90,12 @@ async def test_interface_contracts_with_stubs() -> None:
     await store.save_decision(decision)
     restored = await store.get_decision(decision.decision_id)
     hits = await search.search(query="shock", top_k=3)
+    batch_hits = await search.search_batch(queries=["shock", "volatility"], top_k=2)
 
     assert restored is not None
     assert restored.decision_id == decision.decision_id
     assert restored.trace.faithfulness_score == 1.0
     assert adjusted.risk_adjusted_size == 0
     assert len(hits) == 3
+    assert len(batch_hits) == 2
+    assert batch_hits[0][0]["query"] == "shock"
