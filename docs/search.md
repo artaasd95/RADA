@@ -15,6 +15,7 @@ This document covers the current simulation/search pipeline used for integration
 - `src/rada/search/vectorized_env.py`
 - `src/rada/search/game_theory.py`
 - `src/rada/search/uncertainty.py`
+- `src/rada/search/mcts.py`
 
 ## Integration test
 
@@ -31,3 +32,17 @@ Optional (requires Timescale running on `RADA_DATABASE_URL`):
 ```bash
 python -m pytest tests/integration/test_timescale_store.py -q -m integration
 ```
+
+## MCTS benchmark fixture
+
+Run MCTS unit/fixture checks:
+
+```bash
+python -m pytest tests/unit/test_mcts.py -q
+```
+
+The benchmark helper uses a configurable runtime budget:
+
+- Env var: `RADA_MCTS_BENCHMARK_BUDGET_SECONDS`
+- Default: `60`
+- Override per call via `run_mcts_benchmark_fixture(..., budget_seconds=...)`
