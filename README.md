@@ -59,6 +59,7 @@ Foundation through R5 docs and R6/R7 data stubs:
 | [docs/runbook.md](docs/runbook.md) | Manual deploy, backup, rollback, incidents |
 | [docs/monitoring.md](docs/monitoring.md) | Metrics, logs, alert thresholds, OTel hooks |
 | [docs/decisions.md](docs/decisions.md) | Architecture decisions and R1–R5 parity checklist |
+| [docs/search.md](docs/search.md) | Simulation -> vectorized search -> batched action flow |
 | [samples/github-actions/README.md](samples/github-actions/README.md) | Copy-enable CI/lint workflows |
 
 ## Test Strategy
