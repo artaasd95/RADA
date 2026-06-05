@@ -21,3 +21,6 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Ignore generated LinkedIn posts list
+LINKEDIN_POSTS.md
