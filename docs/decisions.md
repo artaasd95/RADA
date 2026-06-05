@@ -50,6 +50,30 @@ MVP exposes `/health`, `/metrics`, and in-process counters with optional OTel ho
 
 **Repo:** `src/rada/search/simulation.py`
 
+## ADR-007: Timescale warm tier over kdb+ hot tier (MVP)
+
+**Status:** Accepted (spike S9-04)
+
+MVP and export batches use SQL/Timescale. kdb+ evaluated for sub-ms tick hot tier; deferred until ingest SLOs require it.
+
+**Repo:** `docs/spikes/kdb-vs-timescale.md`, `src/rada/data/timescale_store.py`
+
+## ADR-008: Reflection and export off hot path
+
+**Status:** Accepted (S3-03, S6-05–S6-08)
+
+`ReflectionLoop` and `export_batch` never block `DecisionLoop.process_one`. Usage/export pipelines configured via YAML.
+
+**Repo:** `src/rada/core/reflection_loop.py`, `src/rada/data/export_batch.py`, `configs/data/`
+
+## ADR-009: Optional search before risk gate
+
+**Status:** Accepted (S8–S9)
+
+`SearchLoop` is feature-flagged (`RADA_SEARCH_ENABLED`, default off). Wired into `DecisionLoop` between policy and risk.
+
+**Repo:** `src/rada/core/search_loop.py`, `src/rada/search/risk_selection.py`
+
 ## Roadmap parity checklist (R1–R5)
 
 | Milestone | Theme | Shipped artifacts (repo) |

@@ -1,0 +1,24 @@
+# Optional monitoring overlay (S9-02). Use with base compose:
+#   docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+
+version: "3.9"
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - redis
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus

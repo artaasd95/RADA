@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from rada.interfaces import BaseDataStore, BasePolicy, BaseReasoner, BaseRiskOptimizer
 from rada.schemas import ActionDirection, Decision, DecisionTrace, MarketEvent, ProposedAction
+
+if TYPE_CHECKING:
+    from rada.core.search_loop import SearchLoop
 
 
 class NoOpReasoner(BaseReasoner):
@@ -44,15 +49,19 @@ class DecisionLoop:
         policy: BasePolicy,
         risk_optimizer: BaseRiskOptimizer,
         data_store: BaseDataStore,
+        search_loop: SearchLoop | None = None,
     ) -> None:
         self._reasoner = reasoner
         self._policy = policy
         self._risk_optimizer = risk_optimizer
         self._data_store = data_store
+        self._search_loop = search_loop
 
     async def process_one(self, event: MarketEvent) -> Decision:
         trace = await self._reasoner.reason(event)
         proposed = await self._policy.propose(event, trace)
+        if self._search_loop is not None and self._search_loop.enabled:
+            proposed = await self._search_loop.refine_proposal(event, trace, proposed)
         optimized = await self._risk_optimizer.optimize(proposed, trace)
 
         decision = Decision(

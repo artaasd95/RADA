@@ -1,0 +1,27 @@
+version: 1
+mode: usage
+
+datasources:
+  - id: live_stream
+    type: stream
+    uri: ${RADA_BUS_BACKEND:-redis}
+    contract: MarketEvent
+    options:
+      topic: market_events
+      backend: redis
+
+preprocessing:
+  stages:
+    - normalize: { contract: MarketEvent }
+    - lineage: { via: quality_hooks }
+
+sinks:
+  hot:
+    type: db
+    contract: Decision
+    options:
+      store: timescale
+  warm:
+    type: db
+    options:
+      tables: [market_events, decision_traces]

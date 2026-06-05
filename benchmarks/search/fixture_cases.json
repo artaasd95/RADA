@@ -1,0 +1,35 @@
+[
+  {
+    "symbol": "BTCUSD",
+    "price": 50000.0,
+    "optimal_direction": "BUY",
+    "candidates": [
+      {"direction": "BUY", "size": 1.0},
+      {"direction": "HOLD", "size": 0.0},
+      {"direction": "SELL", "size": 0.5}
+    ],
+    "faithfulness_target": 0.85
+  },
+  {
+    "symbol": "ETHUSD",
+    "price": 3000.0,
+    "optimal_direction": "HOLD",
+    "candidates": [
+      {"direction": "BUY", "size": 0.1},
+      {"direction": "HOLD", "size": 0.0},
+      {"direction": "SELL", "size": 0.1}
+    ],
+    "faithfulness_target": 0.9
+  },
+  {
+    "symbol": "SOLUSD",
+    "price": 150.0,
+    "optimal_direction": "SELL",
+    "candidates": [
+      {"direction": "BUY", "size": 0.2},
+      {"direction": "SELL", "size": 0.3},
+      {"direction": "HOLD", "size": 0.0}
+    ],
+    "faithfulness_target": 0.8
+  }
+]

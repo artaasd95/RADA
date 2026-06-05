@@ -1,0 +1,27 @@
+version: 1
+mode: export
+
+datasources:
+  - id: action_db
+    type: db
+    uri: ${RADA_DATABASE_URL}
+    contract: Decision
+    options:
+      since: "2026-01-01T00:00:00Z"
+      policy_ids: [balanced, conservative]
+
+preprocessing:
+  stages:
+    - normalize: { contract: DecisionExportRow }
+    - enrich: { via: raft_auditor, optional: true }
+    - filter: { require_outcome: false }
+
+sinks:
+  reflection:
+    type: file
+    uri: exports/reflection/{batch_id}.jsonl
+    format: jsonl
+  feedback:
+    type: file
+    uri: feedback/outgoing/{batch_id}.jsonl
+    contract: FeedbackRecord

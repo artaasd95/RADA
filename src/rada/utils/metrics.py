@@ -16,9 +16,12 @@ _counters: dict[str, int] = {
     "rada_decisions_processed_total": 0,
     "rada_events_ingested_total": 0,
     "rada_ingest_quality_rejected_total": 0,
+    "rada_reflection_processed_total": 0,
+    "rada_search_invocations_total": 0,
 }
 _gauges: dict[str, float] = {
     "rada_rolling_pnl_stub": 0.0,
+    "rada_reflection_mean_faithfulness": 0.0,
 }
 
 _otel_hooks: list[Callable[[str, dict[str, Any]], None]] = []
@@ -47,6 +50,33 @@ def record_event_ingested(source: str = "unknown") -> None:
 def record_quality_rejection(reason: str) -> None:
     increment_counter("rada_ingest_quality_rejected_total")
     _emit_otel("ingest.quality_rejected", {"reason": reason})
+
+
+def record_reflection_processed(mean_faithfulness: float) -> None:
+    increment_counter("rada_reflection_processed_total")
+    set_gauge("rada_reflection_mean_faithfulness", mean_faithfulness)
+    _emit_otel("reflection.processed", {"mean_faithfulness": mean_faithfulness})
+
+
+def record_search_invocation(enabled: bool) -> None:
+    if enabled:
+        increment_counter("rada_search_invocations_total")
+    _emit_otel("search.invocation", {"enabled": enabled})
+
+
+_alert_hooks: list[Callable[[str, dict[str, Any]], None]] = []
+
+
+def register_alert_hook(hook: Callable[[str, dict[str, Any]], None]) -> None:
+    """Register operator alerting callback (PagerDuty/email bridge)."""
+    _alert_hooks.append(hook)
+
+
+def emit_alert(name: str, *, severity: str = "warning", **attributes: Any) -> None:
+    payload = {"severity": severity, **attributes}
+    for hook in _alert_hooks:
+        hook(name, payload)
+    _emit_otel(f"alert.{name}", payload)
 
 
 def register_otel_hook(hook: Callable[[str, dict[str, Any]], None]) -> None:

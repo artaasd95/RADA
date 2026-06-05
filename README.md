@@ -1,83 +1,88 @@
 # RADA
 
-Risk-Aware Decision Agent.
+**Risk-Aware Decision Agent** — an async Python service that ingests normalized market events, reasons over them, applies risk constraints, and persists decisions. It is built for reviewability and testability, not live trading.
 
-## Architecture Intent
+## What you are looking at
 
-RADA is an async, test-first decision pipeline for market-event ingestion and risk-aware action generation.
-The initial architecture is split into:
+RADA is a decision pipeline, not a trading bot. The hot path is:
 
-- Schemas: strong typed domain contracts
-- Interfaces: abstract boundaries for reasoner/risk/policy/auditor/storage/search
-- Core loop: orchestrated event -> decision flow
-- Data layer: event ingress, quality hooks, analytics, and decision persistence
+```text
+MarketEvent → reasoner → policy → [optional search] → risk → Decision → store
+```
 
-## Non-Goals
+Reflection (auditor feedback, policy checkpoints, batch export) runs **off** that path so latency stays predictable.
 
-- No live trading execution
-- No broker account connectivity in MVP
-- No unmanaged third-party adapter calls in the hot path
-- **No sole dependence on GitHub Actions for production deploy** (see [docs/runbook.md](docs/runbook.md))
+## Architecture at a glance
 
-## Quickstart (Sprint 1 baseline)
+| Layer | Location | Responsibility |
+|-------|----------|----------------|
+| Schemas | `src/rada/schemas.py` | Typed domain contracts |
+| Interfaces | `src/rada/interfaces/` | Reasoner, policy, risk, auditor, storage, search |
+| Core | `src/rada/core/` | `decision_loop`, `reflection_loop`, optional `search_loop` |
+| Data | `src/rada/data/` | Bus, ingest, storage, pipeline, export cards |
+| Search | `src/rada/search/` | Simulation, MCTS, CVaR selection, eval fixtures |
+| Ops | `src/rada/utils/metrics.py`, `docs/` | Health, Prometheus stubs, runbooks |
 
-1. Create a virtual environment and install dependencies from `pyproject.toml`.
-2. Bring up local infra:
+See [docs/architecture-overview.md](docs/architecture-overview.md) for a reviewer-oriented walkthrough.
 
-	- `make up`
-	- or `docker compose up -d`
+## Quickstart
 
-3. Optional data overlay (Kafka / ZeroMQ / Timescale):
+```bash
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -e ".[dev]"
 
-	- `docker compose -f docker-compose.yml -f docker-compose.data.yml up -d`
+docker compose up -d
+ruff check .
+pytest
 
-4. Run checks locally:
+uvicorn rada.main:app --reload
+```
 
-	- `ruff check .`
-	- `pytest`
+- Health: `GET /health`
+- Metrics: `GET /metrics`
 
-5. Start API (health + metrics):
+Optional data stack: `docker compose -f docker-compose.yml -f docker-compose.data.yml up -d`
 
-	- `uvicorn rada.main:app --reload`
+Optional monitoring overlay: `docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d`
 
-## Current Scope
+## Configuration highlights
 
-Foundation through R5 docs and R6/R7 data stubs:
-
-- Python package under `src/rada/`
-- Domain schemas, interfaces, and decision loop
-- Pluggable event bus (`inmemory`, `redis`, `kafka`, `zeromq`)
-- Ingest quality lineage and rolling P&L analytics stubs
-- Causal market shock simulation for replay
-- Operator runbook, monitoring docs, ADR log
-- Sample GitHub Actions workflows (opt-in under `samples/github-actions/`)
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `RADA_DATA_STORE_MODE` | `sqlite` | `inmemory`, `sqlite`, `timescale` |
+| `RADA_EVENT_BUS_MODE` | `inmemory` | Event bus backend |
+| `RADA_SEARCH_ENABLED` | off | Enable search before risk gate |
+| `RADA_OTEL_ENABLED` | off | Emit OTel hook events |
 
 ## Documentation
 
 | Doc | Purpose |
 |-----|---------|
-| [docs/runbook.md](docs/runbook.md) | Manual deploy, backup, rollback, incidents |
-| [docs/monitoring.md](docs/monitoring.md) | Metrics, logs, alert thresholds, OTel hooks |
-| [docs/decisions.md](docs/decisions.md) | Architecture decisions and R1–R5 parity checklist |
-| [docs/search.md](docs/search.md) | Simulation -> vectorized search -> batched action flow |
-| [samples/github-actions/README.md](samples/github-actions/README.md) | Copy-enable CI/lint workflows |
+| [docs/architecture-overview.md](docs/architecture-overview.md) | System design for reviewers |
+| [docs/data-platform.md](docs/data-platform.md) | Usage vs export pipeline modes |
+| [docs/search-algorithms.md](docs/search-algorithms.md) | Search layer + fixtures |
+| [docs/monitoring.md](docs/monitoring.md) | Metrics, alerts, compose overlay |
+| [docs/runbook.md](docs/runbook.md) | Deploy, rollback, incidents |
+| [docs/decisions.md](docs/decisions.md) | ADR log |
+| [docs/post-mvp-demo.md](docs/post-mvp-demo.md) | Data + search demo guide |
 
-## Test Strategy
+## Non-goals
 
-- Unit or mock-contract tests for each main implementation step.
-- Integration checkpoint tests at sprint milestones (`tests/integration/`).
-- During active buildout, prioritize static checks and targeted reviews before full-suite execution.
+- No live order execution or broker connectivity
+- No third-party HTTP on the hot path (MVP)
+- Production deploy does not depend solely on GitHub Actions ([runbook](docs/runbook.md))
 
 ## Roadmap
 
-| Milestone | Status | Highlights |
-|-----------|--------|------------|
-| R1 Foundation | Shipped | schemas, interfaces, compose stack |
-| R2 Core loop | Shipped | `decision_loop`, storage adapters |
-| R3 Ingest | Shipped | synthetic ingest, fake ingest tests |
-| R4 Contracts | Shipped | interface contract tests |
-| R5 Docs & samples | Shipped | runbook, monitoring, GH Actions samples |
-| R6 Data & search | In progress | bus, analytics, quality, simulation |
-| R7+ | Planned | vault-seed issues |
+| Milestone | Status |
+|-----------|--------|
+| R1–R5 Foundation → docs | Shipped |
+| S3 Reflection loop | Shipped (`reflection_loop.py`) |
+| S6 Data platform | Shipped (pipeline, cards, export CLI) |
+| S8–S9 Search + monitoring | Shipped (fixtures, feature-flag search) |
+| S10+ Product MVP | Planned (vault tasks from S10-01) |
 
-See [docs/decisions.md](docs/decisions.md) for ADRs and vault parity checklist.
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -17,6 +17,9 @@ Observability hooks for RADA align with post-MVP **S9 production monitoring** in
 | `rada_events_ingested_total` | counter | Events passing ingest/quality |
 | `rada_ingest_quality_rejected_total` | counter | Events rejected by quality hooks |
 | `rada_rolling_pnl_stub` | gauge | Latest rolling P&L stub from analytics |
+| `rada_reflection_processed_total` | counter | Decisions processed by reflection loop |
+| `rada_reflection_mean_faithfulness` | gauge | Rolling mean faithfulness from audits |
+| `rada_search_invocations_total` | counter | Search loop invocations when enabled |
 
 ## Log structure
 
@@ -71,6 +74,29 @@ Post-MVP S9 will add:
 - Distributed traces across ingest → decision → persist
 - OTLP export to collector
 - SLO dashboards for decision latency and ingest lag
+
+## Docker monitoring overlay
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+```
+
+- Prometheus UI: http://localhost:9090
+- Grafana UI: http://localhost:3000 (admin/admin)
+
+Scrape config: `configs/monitoring/prometheus.yml` (targets host app on port 8000).
+
+## Alert hooks
+
+```python
+from rada.utils.metrics import emit_alert, register_alert_hook
+
+def pagerduty_bridge(name: str, payload: dict) -> None:
+    ...
+
+register_alert_hook(pagerduty_bridge)
+emit_alert("ingest_quality_spike", severity="critical", rate_per_min=25)
+```
 
 ## Related
 
