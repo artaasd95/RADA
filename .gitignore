@@ -24,3 +24,9 @@ Thumbs.db
 
 # Ignore generated LinkedIn posts list
 LINKEDIN_POSTS.md
+
+# Model weights and distilled corpora (manifests/README committed)
+models/
+data/distilled/*/
+!data/distilled/README.md
+reports/
