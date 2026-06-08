@@ -62,7 +62,13 @@ Data persists in `rada_app_data` and `rada_pg_data` volumes unless removed with 
 
 ## CI enablement
 
-GitHub Actions workflow lives at `.github/workflows/ci.yml` (lint, pytest, image build, no push).
+GitHub Actions workflow at `.github/workflows/ci.yml`:
+
+- `ruff check .`
+- `pytest tests/unit` and `pytest tests/integration -m integration`
+- `docker build -t rada:ci .` (no push)
+
+Enable on your fork by pushing to `main`; branch protection can require the `test` and `image` jobs.
 
 ## Related
 

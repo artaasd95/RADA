@@ -11,6 +11,22 @@ from rada.utils.metrics import get_metrics_snapshot
 
 API_URL = os.getenv("RADA_API_URL", "http://localhost:8000")
 
+
+def _submit(*, client_action: str, decision_id: str, note: str) -> None:
+    payload = {
+        "decision_id": decision_id,
+        "action": client_action,
+        "note": note or f"{client_action} via Streamlit",
+        "reviewer": "streamlit",
+    }
+    try:
+        with httpx.Client(timeout=10.0) as client:
+            client.post(f"{API_URL}/feedback/submit", json=payload)
+        st.success(f"{client_action} submitted for {decision_id}")
+    except httpx.HTTPError as exc:
+        st.error(str(exc))
+
+
 st.set_page_config(page_title="RADA", layout="wide")
 st.title("RADA — review dashboard")
 
@@ -42,18 +58,3 @@ with tab_review:
                 _submit(client_action="APPROVE", decision_id=item["decision_id"], note=note)
             if col2.button("Reject", key=f"reject-{item['feedback_id']}"):
                 _submit(client_action="REJECT", decision_id=item["decision_id"], note=note)
-
-
-def _submit(*, client_action: str, decision_id: str, note: str) -> None:
-    payload = {
-        "decision_id": decision_id,
-        "action": client_action,
-        "note": note or f"{client_action} via Streamlit",
-        "reviewer": "streamlit",
-    }
-    try:
-        with httpx.Client(timeout=10.0) as client:
-            client.post(f"{API_URL}/feedback/submit", json=payload)
-        st.success(f"{client_action} submitted for {decision_id}")
-    except httpx.HTTPError as exc:
-        st.error(str(exc))

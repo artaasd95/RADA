@@ -6,18 +6,8 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./configs/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./configs/monitoring/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
     depends_on:
-      - rada
-    profiles:
-      - observability
-
-  rada:
-    image: rada:local
-    build: .
-    environment:
-      RADA_OTEL_ENABLED: "true"
-    ports:
-      - "8000:8000"
-    profiles:
-      - observability
+      rada:
+        condition: service_healthy
+    restart: unless-stopped

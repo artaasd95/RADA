@@ -11,12 +11,15 @@ from fastapi import FastAPI, Request, Response
 from rada.audit.api import router as audit_router
 from rada.audit.store import AuditStore
 from rada.audit.writer import AuditWriter
+from rada.adapters.scenario_reasoner import ScenarioReasoner
 from rada.core.decision_loop import (
     DecisionLoop,
     HoldPolicy,
     NoOpReasoner,
     PassThroughRiskOptimizer,
 )
+from rada.feedback.auto_flag import build_flag_feedback, should_auto_flag
+from rada.core.reasoner_loop import ReasonerLoop
 from rada.core.reflection_loop import ReflectionLoop
 from rada.data.bus import build_event_bus
 from rada.data.ingestion import synthetic_market_events
@@ -42,6 +45,7 @@ class RuntimeSettings:
     sqlite_url: str = os.getenv("RADA_SQLITE_URL", "sqlite:///./rada.db")
     audit_db_path: str = os.getenv("RADA_AUDIT_DB_PATH", "./rada_audit.db")
     feedback_db_path: str = os.getenv("RADA_FEEDBACK_DB_PATH", "./rada_feedback.db")
+    reasoner_mode: str = os.getenv("RADA_REASONER_MODE", "mock")
 
 
 def build_data_store(settings: RuntimeSettings) -> BaseDataStore:
@@ -57,12 +61,26 @@ def build_data_store(settings: RuntimeSettings) -> BaseDataStore:
     raise ValueError(f"Unsupported RADA_DATA_STORE_MODE={settings.data_store_mode!r}")
 
 
-def build_decision_loop(store: BaseDataStore, audit_writer: AuditWriter | None = None) -> DecisionLoop:
+def build_reasoner(settings: RuntimeSettings):
+    mode = settings.reasoner_mode.lower().strip()
+    if mode in {"mock", "scenario"}:
+        return ScenarioReasoner()
+    return NoOpReasoner()
+
+
+def build_decision_loop(
+    store: BaseDataStore,
+    audit_writer: AuditWriter | None = None,
+    settings: RuntimeSettings | None = None,
+) -> DecisionLoop:
+    settings = settings or RuntimeSettings()
+    reasoner = build_reasoner(settings)
     return DecisionLoop(
-        reasoner=NoOpReasoner(),
+        reasoner=reasoner,
         policy=HoldPolicy(),
         risk_optimizer=PassThroughRiskOptimizer(),
         data_store=store,
+        reasoner_loop=ReasonerLoop(reasoner),
         audit_writer=audit_writer,
     )
 
@@ -125,7 +143,7 @@ async def _lifespan(app: FastAPI):
     app.state.audit_store = audit_store
     app.state.audit_writer = audit_writer
     app.state.feedback_store = feedback_store
-    app.state.decision_loop = build_decision_loop(store, audit_writer)
+    app.state.decision_loop = build_decision_loop(store, audit_writer, settings)
 
     yield
 
@@ -166,10 +184,29 @@ async def ingest_event(event: MarketEvent, request: Request) -> dict[str, str]:
     """Ingest one market event through the decision pipeline."""
     loop: DecisionLoop = request.app.state.decision_loop
     reflection: ReflectionLoop = request.app.state.reflection_loop
+    feedback_store: FeedbackStore = request.app.state.feedback_store
+    audit_writer: AuditWriter = request.app.state.audit_writer
+
     decision = await loop.process_one(event)
     reflection.enqueue(decision)
+
+    flag, reason = should_auto_flag(decision)
+    if flag:
+        await feedback_store.submit(build_flag_feedback(decision, reason))
+        from rada.audit.schemas import AuditEventType
+
+        audit_writer.emit(
+            AuditEventType.HUMAN_FEEDBACK,
+            decision_id=decision.decision_id,
+            payload_after={"auto_flag": True, "reason": reason},
+        )
+
     record_decision_processed()
-    return {"decision_id": decision.decision_id, "direction": decision.proposed_action.direction.value}
+    return {
+        "decision_id": decision.decision_id,
+        "direction": decision.proposed_action.direction.value,
+        "flagged": flag,
+    }
 
 
 @app.post("/bootstrap-demo", tags=["demo"])

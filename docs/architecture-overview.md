@@ -19,15 +19,19 @@ flowchart LR
   store --> export
 ```
 
-### DecisionLoop (hot path)
+### DecisionLoop (hot path) — v1.0
 
-1. **Reasoner** produces a `DecisionTrace`.
-2. **Policy** proposes an action.
-3. **SearchLoop** (optional, `RADA_SEARCH_ENABLED`) may refine the proposal via MCTS + CVaR selection.
-4. **Risk optimizer** adjusts size / CVaR metadata.
-5. **Data store** persists the `Decision`.
+1. **Calc** verifies CVaR, position size, drawdown → `DecisionTrace.verified_context`.
+2. **ReasonerLoop** proposes `ActionTarget[]` (no trade execution).
+3. **DecisionLoop** selects under live CVaR gate; **Policy** fallback.
+4. **SearchLoop** (optional, `RADA_SEARCH_ENABLED`) may refine via MCTS.
+5. **Risk optimizer** adjusts size / CVaR metadata.
+6. **Audit writer** appends DECISION/CALC events (fire-and-forget).
+7. **Data store** persists the `Decision`.
 
-Implementation: `src/rada/core/decision_loop.py`
+Implementation: `src/rada/core/decision_loop.py`, `src/rada/calc/`
+
+See [architecture.md](./architecture.md) for audit, observability, and production compose.
 
 ### ReflectionLoop (async, off hot path)
 
