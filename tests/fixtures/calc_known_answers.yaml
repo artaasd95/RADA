@@ -1,0 +1,55 @@
+cvar:
+  - returns: [-0.02, -0.01, 0.0, 0.01, 0.02, -0.03, -0.015, 0.005]
+    alpha: 0.25
+    min_value: 0.01
+  - returns: [-0.05, -0.04, -0.03, -0.02, -0.01, 0.0, 0.01, 0.02, 0.03, 0.04]
+    alpha: 0.1
+    min_value: 0.03
+  - returns: [0.01, 0.02, 0.01, 0.0, -0.01, -0.02, -0.03, -0.04, -0.05, -0.02]
+    alpha: 0.05
+    min_value: 0.02
+  - returns: [0.0, 0.0, 0.0, 0.0, 0.0]
+    alpha: 0.05
+    min_value: 0.0
+  - returns: [-0.1]
+    alpha: 0.05
+    min_value: 0.0
+
+position_size:
+  - capital: 100000
+    risk_budget: 0.02
+    price: 50000
+    volatility: 0.2
+    min_value: 0.0
+  - capital: 50000
+    risk_budget: 0.01
+    price: 100
+    volatility: 0.15
+    min_value: 1.0
+  - capital: 10000
+    risk_budget: 0.05
+    price: 10
+    volatility: 0.5
+    min_value: 5.0
+  - capital: 0
+    risk_budget: 0.02
+    price: 100
+    volatility: 0.1
+    max_value: 0.0
+  - capital: 1000
+    risk_budget: 0.1
+    price: 50
+    volatility: 0.25
+    min_value: 0.5
+
+drawdown:
+  - equity: [100, 110, 105, 90, 95]
+    min_value: 0.1
+  - equity: [100, 100, 100]
+    max_value: 0.0
+  - equity: [100, 120, 80, 60, 100]
+    min_value: 0.3
+  - equity: [50, 55, 52, 48]
+    min_value: 0.05
+  - equity: [100]
+    max_value: 0.0

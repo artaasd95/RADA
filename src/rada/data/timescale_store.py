@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 
 import asyncpg
 
+from rada.data.query import filter_decisions
 from rada.interfaces import BaseDataStore
 from rada.schemas import Decision
 
@@ -183,6 +185,34 @@ class TimescaleDecisionStore(BaseDataStore):
         if payload is None:
             return None
         return Decision.model_validate_json(payload)
+
+    async def list_decisions(
+        self,
+        *,
+        since: datetime | None = None,
+        limit: int | None = None,
+        policy_ids: list[str] | None = None,
+    ) -> list[Decision]:
+        await self.ensure_ready()
+        pool = await self._pool_or_create()
+
+        query = "SELECT payload::text FROM decisions"
+        params: list[object] = []
+        if since is not None:
+            query += " WHERE created_at >= $1"
+            params.append(since)
+        query += " ORDER BY created_at DESC"
+        if limit is not None and limit > 0:
+            query += f" LIMIT ${len(params) + 1}"
+            params.append(limit)
+
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(query, *params)
+
+        decisions = [Decision.model_validate_json(row[0]) for row in rows]
+        if policy_ids:
+            decisions = filter_decisions(decisions, policy_ids=policy_ids)
+        return decisions
 
     async def close(self) -> None:
         """Gracefully close pool for process shutdown hooks and tests."""

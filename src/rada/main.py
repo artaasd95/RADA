@@ -3,22 +3,30 @@
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Request, Response
 
+from rada.audit.api import router as audit_router
+from rada.audit.store import AuditStore
+from rada.audit.writer import AuditWriter
 from rada.core.decision_loop import (
     DecisionLoop,
     HoldPolicy,
     NoOpReasoner,
     PassThroughRiskOptimizer,
 )
+from rada.core.reflection_loop import ReflectionLoop
 from rada.data.bus import build_event_bus
 from rada.data.ingestion import synthetic_market_events
 from rada.data.storage import InMemoryDecisionStore, SQLiteDecisionStore
 from rada.data.timescale_store import TimescaleDecisionStore
+from rada.feedback.api import router as feedback_router
+from rada.feedback.store import FeedbackStore
 from rada.interfaces import BaseDataStore
-from rada.schemas import Decision
+from rada.observability.metrics import get_metrics
+from rada.schemas import Decision, MarketEvent
 from rada.utils.metrics import (
     get_metrics_snapshot,
     record_decision_processed,
@@ -32,6 +40,8 @@ class RuntimeSettings:
     data_store_mode: str = os.getenv("RADA_DATA_STORE_MODE", "sqlite")
     database_url: str = os.getenv("RADA_DATABASE_URL", "postgresql://rada:rada@localhost:5432/rada")
     sqlite_url: str = os.getenv("RADA_SQLITE_URL", "sqlite:///./rada.db")
+    audit_db_path: str = os.getenv("RADA_AUDIT_DB_PATH", "./rada_audit.db")
+    feedback_db_path: str = os.getenv("RADA_FEEDBACK_DB_PATH", "./rada_feedback.db")
 
 
 def build_data_store(settings: RuntimeSettings) -> BaseDataStore:
@@ -47,6 +57,16 @@ def build_data_store(settings: RuntimeSettings) -> BaseDataStore:
     raise ValueError(f"Unsupported RADA_DATA_STORE_MODE={settings.data_store_mode!r}")
 
 
+def build_decision_loop(store: BaseDataStore, audit_writer: AuditWriter | None = None) -> DecisionLoop:
+    return DecisionLoop(
+        reasoner=NoOpReasoner(),
+        policy=HoldPolicy(),
+        risk_optimizer=PassThroughRiskOptimizer(),
+        data_store=store,
+        audit_writer=audit_writer,
+    )
+
+
 async def run_bootstrap_once(
     event_count: int = 1,
     settings: RuntimeSettings | None = None,
@@ -56,12 +76,7 @@ async def run_bootstrap_once(
     event_bus = await build_event_bus(settings.event_bus_mode)
     store = build_data_store(settings)
 
-    loop = DecisionLoop(
-        reasoner=NoOpReasoner(),
-        policy=HoldPolicy(),
-        risk_optimizer=PassThroughRiskOptimizer(),
-        data_store=store,
-    )
+    loop = build_decision_loop(store)
 
     async for event in synthetic_market_events(count=event_count):
         await event_bus.enqueue(event)
@@ -76,12 +91,7 @@ async def run_bootstrap_once_inmemory(event_count: int = 1) -> Decision:
     event_bus = await build_event_bus("inmemory")
     store = InMemoryDecisionStore()
 
-    loop = DecisionLoop(
-        reasoner=NoOpReasoner(),
-        policy=HoldPolicy(),
-        risk_optimizer=PassThroughRiskOptimizer(),
-        data_store=store,
-    )
+    loop = build_decision_loop(store)
 
     async for event in synthetic_market_events(count=event_count):
         await event_bus.enqueue(event)
@@ -92,7 +102,43 @@ async def run_bootstrap_once_inmemory(event_count: int = 1) -> Decision:
     return decision
 
 
-app = FastAPI(title="RADA", version="0.1.0")
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    settings = RuntimeSettings()
+    store = build_data_store(settings)
+    if hasattr(store, "ensure_ready"):
+        await store.ensure_ready()  # type: ignore[attr-defined]
+
+    audit_store = AuditStore(db_path=settings.audit_db_path)
+    await audit_store.ensure_ready()
+    audit_writer = AuditWriter(store=audit_store)
+    audit_writer.start()
+
+    feedback_store = FeedbackStore(db_path=settings.feedback_db_path)
+    await feedback_store.ensure_ready()
+
+    reflection = ReflectionLoop(data_store=store)
+    reflection.start()
+
+    app.state.reflection_loop = reflection
+    app.state.data_store = store
+    app.state.audit_store = audit_store
+    app.state.audit_writer = audit_writer
+    app.state.feedback_store = feedback_store
+    app.state.decision_loop = build_decision_loop(store, audit_writer)
+
+    yield
+
+    await reflection.stop()
+    await audit_writer.stop()
+    close = getattr(store, "close", None)
+    if close is not None:
+        await close()
+
+
+app = FastAPI(title="RADA", version="1.0.0", lifespan=_lifespan)
+app.include_router(audit_router)
+app.include_router(feedback_router)
 
 
 @app.get("/health", tags=["system"])
@@ -104,13 +150,26 @@ async def health() -> dict[str, str]:
 @app.get("/metrics", tags=["system"])
 async def metrics() -> Response:
     """Prometheus-style metrics snapshot."""
-    return Response(content=render_prometheus_text(), media_type="text/plain; version=0.0.4")
+    obs_body = get_metrics().render_prometheus()
+    legacy_body = render_prometheus_text()
+    return Response(content=obs_body + legacy_body, media_type="text/plain; version=0.0.4")
 
 
 @app.get("/metrics/json", tags=["system"])
-async def metrics_json() -> dict[str, int | float]:
+async def metrics_json() -> dict[str, object]:
     """JSON metrics snapshot for debugging."""
-    return get_metrics_snapshot()
+    return {"legacy": get_metrics_snapshot(), "observability": get_metrics().snapshot()}
+
+
+@app.post("/ingest", tags=["demo"])
+async def ingest_event(event: MarketEvent, request: Request) -> dict[str, str]:
+    """Ingest one market event through the decision pipeline."""
+    loop: DecisionLoop = request.app.state.decision_loop
+    reflection: ReflectionLoop = request.app.state.reflection_loop
+    decision = await loop.process_one(event)
+    reflection.enqueue(decision)
+    record_decision_processed()
+    return {"decision_id": decision.decision_id, "direction": decision.proposed_action.direction.value}
 
 
 @app.post("/bootstrap-demo", tags=["demo"])

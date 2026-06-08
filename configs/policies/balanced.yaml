@@ -1,0 +1,4 @@
+name: balanced
+cvar_max: 0.05
+drawdown_max: 0.10
+size_scaling: 1.0

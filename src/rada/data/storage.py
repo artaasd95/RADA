@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
+from rada.data.query import filter_decisions
 from rada.interfaces import BaseDataStore
 from rada.schemas import Decision
 
@@ -30,6 +32,20 @@ class InMemoryDecisionStore(BaseDataStore):
     async def get_decision(self, decision_id: str) -> Decision | None:
         return self._items.get(decision_id)
 
+    async def list_decisions(
+        self,
+        *,
+        since: datetime | None = None,
+        limit: int | None = None,
+        policy_ids: list[str] | None = None,
+    ) -> list[Decision]:
+        return filter_decisions(
+            list(self._items.values()),
+            since=since,
+            limit=limit,
+            policy_ids=policy_ids,
+        )
+
 
 class SQLiteDecisionStore(BaseDataStore):
     """SQLite fallback store used for CI/local deterministic runs."""
@@ -51,6 +67,13 @@ class SQLiteDecisionStore(BaseDataStore):
             with sqlite3.connect(self._db_path) as conn:
                 row = conn.execute(query, params).fetchone()
                 return row
+
+        return await asyncio.to_thread(_run)
+
+    async def _fetchall(self, query: str, params: tuple[object, ...] = ()) -> list[tuple[str]]:
+        def _run() -> list[tuple[str]]:
+            with sqlite3.connect(self._db_path) as conn:
+                return list(conn.execute(query, params).fetchall())
 
         return await asyncio.to_thread(_run)
 
@@ -84,3 +107,15 @@ class SQLiteDecisionStore(BaseDataStore):
         if row is None:
             return None
         return Decision.model_validate_json(row[0])
+
+    async def list_decisions(
+        self,
+        *,
+        since: datetime | None = None,
+        limit: int | None = None,
+        policy_ids: list[str] | None = None,
+    ) -> list[Decision]:
+        await self.ensure_ready()
+        rows = await self._fetchall("SELECT payload FROM decisions")
+        decisions = [Decision.model_validate_json(row[0]) for row in rows]
+        return filter_decisions(decisions, since=since, limit=limit, policy_ids=policy_ids)

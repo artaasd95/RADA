@@ -1,0 +1,4 @@
+name: aggressive
+cvar_max: 0.10
+drawdown_max: 0.20
+size_scaling: 1.5

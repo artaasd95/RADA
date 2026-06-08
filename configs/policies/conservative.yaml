@@ -1,0 +1,4 @@
+name: conservative
+cvar_max: 0.02
+drawdown_max: 0.05
+size_scaling: 0.5

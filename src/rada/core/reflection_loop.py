@@ -1,17 +1,31 @@
 """Async reflection loop — off the hot decision path (S3-03).
 
 Completed decisions are enqueued without blocking ``DecisionLoop``. A background
-consumer runs auditor scoring and updates a policy checkpoint stub.
+consumer runs auditor scoring, sets outcome stubs, updates policy checkpoint,
+and emits batch export rows.
 """
 
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from pathlib import Path
 
-from rada.interfaces import BaseAuditor, BasePolicy
+from rada.data.export_batch import export_decisions
+from rada.interfaces import BaseAuditor, BaseDataStore, BasePolicy
 from rada.schemas import Decision, DecisionTrace
 from rada.utils.metrics import record_reflection_processed
+
+
+def stub_outcome(decision: Decision) -> dict[str, object]:
+    """Reflection-path outcome stub for export filter compatibility."""
+    return {
+        "status": "simulated_fill",
+        "pnl_stub": 0.0,
+        "filled_at": datetime.now(tz=UTC).isoformat(),
+        "decision_id": decision.decision_id,
+    }
 
 
 @dataclass(slots=True)
@@ -22,6 +36,17 @@ class PolicyCheckpoint:
     audit_count: int = 0
     mean_faithfulness: float = 0.0
     last_rationale: str = ""
+    policy_update_signals: list[str] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class ReflectionSummary:
+    """Audit report payload for reflection batch runs."""
+
+    processed: int = 0
+    exported_batch_id: str | None = None
+    export_paths: dict[str, str] = field(default_factory=dict)
+    checkpoint_version: int = 0
 
 
 class StubAuditor(BaseAuditor):
@@ -53,8 +78,8 @@ class ReflectionPolicyUpdater:
         self.checkpoint.audit_count += 1
         self.checkpoint.version += 1
         self.checkpoint.last_rationale = audit_trace.rationale
+        self.checkpoint.policy_update_signals.append(f"policy_tune:{decision.decision_id[:8]}")
         _ = self._policy
-        _ = decision
         return self.checkpoint
 
 
@@ -66,13 +91,19 @@ class ReflectionLoop:
         *,
         auditor: BaseAuditor | None = None,
         policy_updater: ReflectionPolicyUpdater | None = None,
+        data_store: BaseDataStore | None = None,
+        export_dir: Path | None = None,
         queue_maxsize: int = 256,
     ) -> None:
         self._auditor = auditor or StubAuditor()
         self._policy_updater = policy_updater or ReflectionPolicyUpdater()
+        self._data_store = data_store
+        self._export_dir = export_dir or Path("exports/reflection_runtime")
         self._queue: asyncio.Queue[Decision | None] = asyncio.Queue(maxsize=queue_maxsize)
         self._consumer_task: asyncio.Task[None] | None = None
         self._audit_scores: list[float] = []
+        self._processed_with_outcome: list[Decision] = []
+        self._last_summary = ReflectionSummary()
 
     @property
     def policy_checkpoint(self) -> PolicyCheckpoint:
@@ -82,12 +113,15 @@ class ReflectionLoop:
     def audit_scores(self) -> list[float]:
         return list(self._audit_scores)
 
+    @property
+    def last_summary(self) -> ReflectionSummary:
+        return self._last_summary
+
     def enqueue(self, decision: Decision) -> None:
         """Fire-and-forget enqueue; safe from the hot decision path."""
         try:
             self._queue.put_nowait(decision)
         except asyncio.QueueFull:
-            # Drop under backpressure rather than blocking decisions.
             return
 
     async def drain_one(self) -> bool:
@@ -107,6 +141,15 @@ class ReflectionLoop:
         while await self.drain_one():
             count += 1
         return count
+
+    async def run_batch_from_store(self, *, limit: int | None = 100) -> ReflectionSummary:
+        """Read action DB off hot path, audit, export, and update policy checkpoint."""
+        if self._data_store is None:
+            return ReflectionSummary()
+        decisions = await self._data_store.list_decisions(limit=limit)
+        for decision in decisions:
+            await self._process(decision)
+        return self._last_summary
 
     def start(self) -> None:
         if self._consumer_task is None or self._consumer_task.done():
@@ -129,5 +172,23 @@ class ReflectionLoop:
         audit_trace = await self._auditor.audit(decision)
         score = audit_trace.faithfulness_score or 0.0
         self._audit_scores.append(score)
-        checkpoint = await self._policy_updater.apply(decision, audit_trace)
+
+        enriched = decision.model_copy(update={"outcome": stub_outcome(decision)})
+        self._processed_with_outcome.append(enriched)
+
+        checkpoint = await self._policy_updater.apply(enriched, audit_trace)
         record_reflection_processed(checkpoint.mean_faithfulness)
+
+        if len(self._processed_with_outcome) >= 1:
+            summary = export_decisions(
+                self._processed_with_outcome,
+                output_dir=self._export_dir,
+                batch_id=f"reflection-{checkpoint.version}",
+            )
+            self._last_summary = ReflectionSummary(
+                processed=len(self._processed_with_outcome),
+                exported_batch_id=summary["batch_id"],
+                export_paths=summary,
+                checkpoint_version=checkpoint.version,
+            )
+            self._processed_with_outcome.clear()

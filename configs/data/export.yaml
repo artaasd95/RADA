@@ -14,7 +14,7 @@ preprocessing:
   stages:
     - normalize: { contract: DecisionExportRow }
     - enrich: { via: raft_auditor, optional: true }
-    - filter: { require_outcome: false }
+    - filter: { require_outcome: true }
 
 sinks:
   reflection:

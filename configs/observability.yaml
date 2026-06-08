@@ -1,0 +1,9 @@
+version: 1
+otel:
+  enabled: ${RADA_OTEL_ENABLED:-false}
+  exporter: console
+prometheus:
+  enabled: true
+  endpoint: /metrics
+logging:
+  level: INFO

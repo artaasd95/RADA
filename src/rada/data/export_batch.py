@@ -33,7 +33,7 @@ def export_decisions(
 
     config = load_pipeline_config(config_path)
     runner = ExportPipelineRunner(config)
-    runner.run_batch(decisions)
+    decisions = runner.filter_decisions(decisions)
 
     with reflection_path.open("w", encoding="utf-8") as reflection_file:
         for decision in decisions:

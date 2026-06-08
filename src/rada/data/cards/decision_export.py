@@ -60,6 +60,8 @@ class DecisionExportRow(BaseModel):
             trigger_event=decision.market_event,
             trace=decision.trace,
             action=decision.proposed_action,
+            outcome=decision.outcome,
+            policy_id=decision.policy_id,
             auditor_enrichment=auditor_enrichment,
             metadata=ExportMetadata(
                 export_batch_id=batch_id,

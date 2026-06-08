@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from rada.core.decision_loop import DecisionLoop, HoldPolicy, NoOpReasoner, PassThroughRiskOptimizer
+from rada.core.reflection_loop import stub_outcome
 from rada.data.export_batch import export_decisions
 from rada.data.storage import InMemoryDecisionStore
 from rada.schemas import MarketEvent
@@ -32,6 +33,7 @@ async def test_batch_export_writes_jsonl_artifacts(tmp_path: Path) -> None:
         )
         decisions.append(await loop.process_one(event))
 
+    decisions = [d.model_copy(update={"outcome": stub_outcome(d)}) for d in decisions]
     summary = export_decisions(decisions, output_dir=tmp_path, batch_id="test-batch")
     reflection = Path(summary["reflection"])
     feedback = Path(summary["feedback"])

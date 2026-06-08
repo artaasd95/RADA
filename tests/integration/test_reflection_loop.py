@@ -42,3 +42,5 @@ async def test_n_decisions_produce_audit_scores_and_policy_checkpoint() -> None:
     assert checkpoint.audit_count == n
     assert checkpoint.version == n
     assert checkpoint.mean_faithfulness > 0.0
+    assert len(checkpoint.policy_update_signals) == n
+    assert reflection.last_summary.processed >= 1

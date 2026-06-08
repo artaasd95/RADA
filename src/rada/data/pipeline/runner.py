@@ -55,16 +55,18 @@ class ExportPipelineRunner:
             raise ValueError(f"expected export config, got mode={config.mode!r}")
         self.config = config
 
-    def run_batch(self, decisions: list[Decision]) -> list[StageResult]:
+    def run_batch(self, decisions: list[Decision]) -> tuple[list[StageResult], list[Decision]]:
         results: list[StageResult] = []
-        rows_in = len(decisions)
-        rows_out = rows_in
+        rows = list(decisions)
+        rows_in = len(rows)
         for stage_def in self.config.preprocessing.stages:
             stage_name = next(iter(stage_def.keys()), "unknown")
+            rows_out = rows_in
             if stage_name == "filter":
                 require_outcome = stage_def.get("filter", {}).get("require_outcome", False)
                 if require_outcome:
-                    rows_out = rows_in  # stub: no outcome field on Decision yet
+                    rows = [d for d in rows if d.outcome is not None]
+                    rows_out = len(rows)
             results.append(
                 StageResult(
                     stage=stage_name,
@@ -74,4 +76,9 @@ class ExportPipelineRunner:
                 )
             )
             rows_in = rows_out
-        return results
+        return results, rows
+
+    def filter_decisions(self, decisions: list[Decision]) -> list[Decision]:
+        """Apply export preprocessing and return filtered decisions."""
+        _, filtered = self.run_batch(decisions)
+        return filtered

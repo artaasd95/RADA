@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: rada
+      POSTGRES_USER: rada
+      POSTGRES_PASSWORD: ${RADA_POSTGRES_PASSWORD:-rada}
+    volumes:
+      - rada_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rada -d rada"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  redis:
+    image: redis:7.2-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  rada:
+    build: .
+    ports:
+      - "${RADA_PORT:-8000}:8000"
+    environment:
+      RADA_DATA_STORE_MODE: sqlite
+      RADA_SQLITE_URL: sqlite:////app/data/rada.db
+      RADA_EVENT_BUS_MODE: redis
+      RADA_DATABASE_URL: postgresql://rada:${RADA_POSTGRES_PASSWORD:-rada}@postgres:5432/rada
+      RADA_REASONER_MODE: mock
+      RADA_OTEL_ENABLED: ${RADA_OTEL_ENABLED:-false}
+    volumes:
+      - rada_app_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+volumes:
+  rada_pg_data:
+  rada_app_data:
