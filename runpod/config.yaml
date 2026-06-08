@@ -1,0 +1,10 @@
+backend: unsloth
+model_id: qwen2.5-0.5b
+data_source: distilled
+distilled_name: reflection_v1
+method: reflection
+epochs: 3
+batch_size: 4
+output_run_id: runpod
+checkpoint_interval: 100
+checkpoint_keep_last: 3
