@@ -87,7 +87,10 @@ class UnslothTrainer:
             num_train_epochs=self.config.epochs,
             learning_rate=self.config.learning_rate,
             logging_steps=1,
-            save_strategy="no",
+            save_strategy="steps",
+            save_steps=self.config.checkpoint_interval,
+            save_total_limit=self.config.checkpoint_keep_last,
+            resume_from_checkpoint=self.config.resume_from,
             report_to="none",
         )
 

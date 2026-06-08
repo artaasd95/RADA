@@ -31,4 +31,7 @@ class TrainingConfig(BaseModel):
     learning_rate: float = 2e-4
     max_seq_length: int = 512
     output_run_id: str = "default"
+    checkpoint_interval: int = 100
+    checkpoint_keep_last: int = 3
+    resume_from: str | None = None
     lora: LoRASettings = Field(default_factory=LoRASettings)
