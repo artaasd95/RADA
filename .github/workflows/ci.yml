@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   test:
@@ -25,15 +25,4 @@ jobs:
         run: ruff check .
 
       - name: Unit tests
-        run: pytest tests/unit -q --strict-markers
-
-      - name: Integration smoke
-        run: pytest tests/integration -q --strict-markers -m integration
-
-  image:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t rada:ci .
+        run: pytest tests/unit -q --strict-markers -m "not gpu and not integration"

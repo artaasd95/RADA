@@ -1,6 +1,14 @@
+<p align="center">
+  <img src="assets/logo.png" alt="RADA logo placeholder" width="120" />
+</p>
+
 # RADA
 
-**Risk-Aware Decision Agent** — async Python service: ingest market events → verified calc → reasoner proposals → risk-gated decision → audit trail → human review.
+[![CI](https://github.com/artaasd95/RADA/actions/workflows/ci.yml/badge.svg)](https://github.com/artaasd95/RADA/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
+**Risk-Aware Decision Agent** — async Python service: ingest market events → verified calc → reasoner proposals → risk-gated decision → audit trail → human review → optional BYOK LLM inference.
 
 ## Quickstart (production)
 

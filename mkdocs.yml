@@ -1,0 +1,28 @@
+site_name: RADA
+site_description: Risk-Aware Decision Agent — technical documentation
+repo_url: https://github.com/artaasd95/RADA
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+
+nav:
+  - Home: README.md
+  - Architecture: architecture-overview.md
+  - Calc engine: calc.md
+  - Observability: observability.md
+  - Audit trail: audit.md
+  - Human validation: human-validation.md
+  - LLM integration (BYOK): llm-integration.md
+  - Training: training.md
+  - Production runbook: runbook-production.md
+
+docs_dir: docs
+strict: false
+
+markdown_extensions:
+  - admonition
+  - tables
+  - fenced_code

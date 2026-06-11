@@ -46,6 +46,7 @@ class RuntimeSettings:
     audit_db_path: str = os.getenv("RADA_AUDIT_DB_PATH", "./rada_audit.db")
     feedback_db_path: str = os.getenv("RADA_FEEDBACK_DB_PATH", "./rada_feedback.db")
     reasoner_mode: str = os.getenv("RADA_REASONER_MODE", "mock")
+    llm_config_path: str = os.getenv("RADA_LLM_CONFIG_PATH", "configs/llm_mock.yaml")
 
 
 def build_data_store(settings: RuntimeSettings) -> BaseDataStore:
@@ -66,6 +67,18 @@ def build_reasoner(settings: RuntimeSettings):
     if mode in {"mock", "scenario"}:
         return ScenarioReasoner()
     return NoOpReasoner()
+
+
+def build_llm_provider(settings: RuntimeSettings):
+    """Optional BYOK LLM provider for runtime inference (mock default)."""
+    from pathlib import Path
+
+    from rada.llm_integration.factory import create_llm_provider
+
+    path = Path(settings.llm_config_path)
+    if not path.exists():
+        path = Path("configs/llm_mock.yaml")
+    return create_llm_provider(path)
 
 
 def build_decision_loop(
@@ -144,6 +157,7 @@ async def _lifespan(app: FastAPI):
     app.state.audit_writer = audit_writer
     app.state.feedback_store = feedback_store
     app.state.decision_loop = build_decision_loop(store, audit_writer, settings)
+    app.state.llm_provider = build_llm_provider(settings)
 
     yield
 
