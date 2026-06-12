@@ -6,7 +6,10 @@ Thank you for your interest in RADA. This project is a showcase-quality risk-awa
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+# Windows PowerShell:
+.venv\Scripts\Activate.ps1
+# Linux/macOS:
+# source .venv/bin/activate
 pip install -e ".[dev]"
 pytest tests/unit -m "not gpu and not integration"
 ruff check .
@@ -35,3 +38,4 @@ Requires **Python 3.11+**.
 1. Describe the decision pipeline or subsystem touched.
 2. Link vault task ID if applicable (e.g. `IMP-LLM-01-07`).
 3. Ensure `ruff check` and unit tests pass.
+4. Include API or behavior changes in `README.md` and/or `docs/` when relevant.

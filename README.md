@@ -9,6 +9,7 @@
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white" alt="Docker" /></a>
   <a href="https://github.com/artaasd95/RADA"><img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version 1.0.0" /></a>
   <a href="https://github.com/artaasd95/RADA/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?logo=apache&logoColor=white" alt="License: Apache 2.0" /></a>
+  <a href="https://github.com/artaasd95/RADA/stargazers"><img src="https://img.shields.io/github/stars/artaasd95/RADA?style=social" alt="GitHub stars" /></a>
 </p>
 
 <p align="center">
@@ -42,12 +43,29 @@ It is built for systems where **traceability, safety constraints, and operator c
 - **Model portability:** safe defaults with mock adapters, plus BYOK providers for self-hosted or cloud inference.
 - **Separated hot path and learning path:** reflection/export/training are asynchronous and do not block ingest.
 
+## Why Teams Choose RADA
+
+| Capability | RADA Advantage |
+|---|---|
+| **Decision safety** | Risk checks and policy gating run before persistence. |
+| **Auditability** | Full decision lifecycle retrieval and NDJSON export. |
+| **Operator oversight** | Human feedback queue with explicit approve/reject flow. |
+| **Deployment flexibility** | Local dev, Compose production, optional monitoring overlays. |
+| **Model strategy** | Mock-first reliability with optional BYOK providers. |
+
 ## Built For Teams That Need
 
 - **Trust and governance:** explainable decisions and immutable audit events.
 - **Operator control:** manual approval workflows for sensitive actions.
 - **Reliable iteration:** run with deterministic mock reasoning, then swap providers when ready.
 - **Data flywheel readiness:** export production decisions into reflection/training pipelines.
+
+## High-Value Use Cases
+
+- **Risk-aware decision automation pilots** where every output must be inspectable before trust is granted.
+- **Human-supervised AI operations** that require queue-based review for flagged or low-confidence actions.
+- **Model evaluation and improvement loops** that export real runtime traces for offline training/refinement.
+- **Regulated or compliance-sensitive domains** where observability and audit trails are mandatory.
 
 ## Quickstart in 60 Seconds
 
@@ -71,6 +89,11 @@ Then inspect the full chain:
 ```bash
 curl "http://localhost:8000/audit/decision/<decision_id>"
 ```
+
+Open API documentation:
+
+- `http://localhost:8000/docs`
+- `http://localhost:8000/redoc`
 
 ## System Flow
 
@@ -174,6 +197,15 @@ streamlit run apps/streamlit/dashboard.py
 
 Set `RADA_API_URL` (and `RADA_API_KEY` if auth is enabled).
 
+## Visual Preview
+
+RADA ships branding assets in `assets/`:
+
+- `assets/banner.png` (repository banner)
+- `assets/logo.png` (project logo)
+
+These are ready for GitHub social previews, release notes, and docs pages.
+
 ## API Surface
 
 | Endpoint | Purpose |
@@ -241,6 +273,12 @@ Pre/post training comparison:
 python scripts/compare_pre_post_train.py --model-id qwen3-0.6b --fixtures benchmarks/training/toy_feedback.jsonl
 ```
 
+## Project Maturity
+
+- **Current release:** `v1.0.0`
+- **Core status:** production-oriented decision path, audit APIs, feedback APIs, and dashboards are in place.
+- **Testing:** extensive `tests/unit` and `tests/integration` coverage with CI checks.
+
 ## Documentation
 
 - [Documentation index](docs/index.md)
@@ -250,6 +288,20 @@ python scripts/compare_pre_post_train.py --model-id qwen3-0.6b --fixtures benchm
 - [LLM integration (BYOK)](docs/llm-integration.md)
 - [Training](docs/training.md)
 - [Data platform](docs/data-platform.md)
+
+## Contributing
+
+Contributions are welcome. Start with:
+
+- [Contributing guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+
+For impactful contributions, prioritize:
+
+- better risk policies and reasoner strategies,
+- richer operator UX in dashboards,
+- stronger benchmark/evaluation suites,
+- production observability enhancements.
 
 ## License
 
