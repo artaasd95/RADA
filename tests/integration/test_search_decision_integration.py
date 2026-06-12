@@ -51,8 +51,5 @@ async def test_decision_loop_with_search_enabled_may_change_action() -> None:
         timestamp=datetime(2026, 6, 1, tzinfo=UTC),
     )
     decision = await loop.process_one(event)
-    assert decision.proposed_action.direction in {
-        ActionDirection.BUY,
-        ActionDirection.SELL,
-        ActionDirection.HOLD,
-    }
+    assert isinstance(decision.trace.synthetic_context, dict)
+    assert decision.trace.synthetic_context.get("position_size", 0) > 0

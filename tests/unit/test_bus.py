@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 import pytest
 
 from rada.data.bus import InMemoryEventBus, build_event_bus
+from rada.schemas import MarketEvent
 
 
 @pytest.mark.unit

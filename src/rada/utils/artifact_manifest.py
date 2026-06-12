@@ -11,11 +11,10 @@ from typing import Any
 
 
 def adapter_store_root() -> Path:
-    """Canonical root: RADA_ADAPTER_STORE_ROOT or experiments/adapters."""
-    env = os.environ.get("RADA_ADAPTER_STORE_ROOT")
-    if env:
-        return Path(env).expanduser().resolve()
-    return Path("experiments/adapters").resolve()
+    """Canonical adapter root shared with model resolver."""
+    from rada.models.resolver import get_adapter_root
+
+    return get_adapter_root()
 
 
 def eval_export_root() -> Path:
@@ -37,9 +36,12 @@ class ArtifactManifest:
     extra: dict[str, Any] = field(default_factory=dict)
 
     def write(self, root: Path | None = None) -> Path:
+        from rada.security.validation import resolve_within_root, validate_safe_id
+
+        validate_safe_id(self.run_id, field="run_id")
         root = root or adapter_store_root()
         root.mkdir(parents=True, exist_ok=True)
-        out = root / self.run_id / "manifest.json"
+        out = resolve_within_root(root, self.run_id, "manifest.json")
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(asdict(self), indent=2), encoding="utf-8")
         return out

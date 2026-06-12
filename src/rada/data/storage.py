@@ -32,6 +32,11 @@ class InMemoryDecisionStore(BaseDataStore):
     async def get_decision(self, decision_id: str) -> Decision | None:
         return self._items.get(decision_id)
 
+    async def update_decision(self, decision: Decision) -> None:
+        if decision.decision_id not in self._items:
+            raise KeyError(f"decision not found: {decision.decision_id}")
+        self._items[decision.decision_id] = decision
+
     async def list_decisions(
         self,
         *,
@@ -107,6 +112,24 @@ class SQLiteDecisionStore(BaseDataStore):
         if row is None:
             return None
         return Decision.model_validate_json(row[0])
+
+    async def update_decision(self, decision: Decision) -> None:
+        await self.ensure_ready()
+        rowcount = await self._execute_update(
+            "UPDATE decisions SET payload = ? WHERE decision_id = ?",
+            (decision.model_dump_json(), decision.decision_id),
+        )
+        if rowcount == 0:
+            raise KeyError(f"decision not found: {decision.decision_id}")
+
+    async def _execute_update(self, query: str, params: tuple[object, ...]) -> int:
+        def _run() -> int:
+            with sqlite3.connect(self._db_path) as conn:
+                cursor = conn.execute(query, params)
+                conn.commit()
+                return cursor.rowcount
+
+        return await asyncio.to_thread(_run)
 
     async def list_decisions(
         self,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 
 import httpx
@@ -10,6 +11,14 @@ import streamlit as st
 from rada.utils.metrics import get_metrics_snapshot
 
 API_URL = os.getenv("RADA_API_URL", "http://localhost:8000")
+API_KEY = os.getenv("RADA_API_KEY", "")
+
+
+def _headers() -> dict[str, str]:
+    headers: dict[str, str] = {}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+    return headers
 
 
 def _submit(*, client_action: str, decision_id: str, note: str) -> None:
@@ -21,7 +30,12 @@ def _submit(*, client_action: str, decision_id: str, note: str) -> None:
     }
     try:
         with httpx.Client(timeout=10.0) as client:
-            client.post(f"{API_URL}/feedback/submit", json=payload)
+            response = client.post(
+                f"{API_URL}/feedback/submit",
+                json=payload,
+                headers=_headers(),
+            )
+            response.raise_for_status()
         st.success(f"{client_action} submitted for {decision_id}")
     except httpx.HTTPError as exc:
         st.error(str(exc))
@@ -42,7 +56,13 @@ with tab_review:
     st.subheader("Flagged decisions")
     try:
         with httpx.Client(timeout=10.0) as client:
-            pending = client.get(f"{API_URL}/feedback/pending").json().get("pending", [])
+            response = client.get(f"{API_URL}/feedback/pending", headers=_headers())
+            response.raise_for_status()
+            try:
+                pending = response.json().get("pending", [])
+            except json.JSONDecodeError as exc:
+                st.error(f"Invalid JSON from feedback API: {exc}")
+                pending = []
     except httpx.HTTPError as exc:
         st.error(f"Cannot reach feedback API at {API_URL}: {exc}")
         pending = []

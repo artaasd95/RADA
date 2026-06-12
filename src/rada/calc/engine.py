@@ -29,12 +29,26 @@ def _result(
 
 def compute_cvar(returns: list[float], *, alpha: float = 0.05) -> CalcResult:
     if len(returns) < 5:
-        return _result("cvar", 0.0, "fraction", CalcConfidence.LOW, "insufficient_samples")
+        return _result(
+            "cvar",
+            float("nan"),
+            "fraction",
+            CalcConfidence.LOW,
+            "insufficient_samples",
+            {"n": len(returns)},
+        )
     arr = np.asarray(returns, dtype=np.float64)
     var_threshold = np.quantile(arr, alpha)
     tail = arr[arr <= var_threshold]
     if tail.size == 0:
-        return _result("cvar", float(-var_threshold), "fraction", CalcConfidence.MEDIUM, "numpy_quantile")
+        return _result(
+            "cvar",
+            float("nan"),
+            "fraction",
+            CalcConfidence.LOW,
+            "empty_tail",
+            {"alpha": alpha, "var_threshold": float(var_threshold)},
+        )
     cvar = float(-np.mean(tail))
     conf = CalcConfidence.HIGH if len(returns) >= 20 else CalcConfidence.MEDIUM
     return _result("cvar", cvar, "fraction", conf, "historical_cvar", {"alpha": alpha, "n": len(returns)})

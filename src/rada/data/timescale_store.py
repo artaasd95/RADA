@@ -7,7 +7,6 @@ from datetime import datetime
 
 import asyncpg
 
-from rada.data.query import filter_decisions
 from rada.interfaces import BaseDataStore
 from rada.schemas import Decision
 
@@ -96,6 +95,12 @@ class TimescaleDecisionStore(BaseDataStore):
                 ON decision_traces(model_name, ts DESC)
                 """
             )
+            await conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_decisions_created_at
+                ON decisions(created_at DESC)
+                """
+            )
 
             has_timescaledb = await conn.fetchval(
                 "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb')"
@@ -131,8 +136,12 @@ class TimescaleDecisionStore(BaseDataStore):
             async with conn.transaction():
                 try:
                     await conn.execute(
-                        "INSERT INTO decisions (decision_id, payload) VALUES ($1, $2::jsonb)",
+                        """
+                        INSERT INTO decisions (decision_id, created_at, payload)
+                        VALUES ($1, $2, $3::jsonb)
+                        """,
                         decision.decision_id,
+                        decision.timestamp,
                         json.dumps(payload),
                     )
                 except asyncpg.UniqueViolationError as exc:
@@ -186,6 +195,24 @@ class TimescaleDecisionStore(BaseDataStore):
             return None
         return Decision.model_validate_json(payload)
 
+    async def update_decision(self, decision: Decision) -> None:
+        await self.ensure_ready()
+        pool = await self._pool_or_create()
+        payload = json.dumps(json.loads(decision.model_dump_json()))
+        async with pool.acquire() as conn:
+            result = await conn.execute(
+                """
+                UPDATE decisions
+                SET payload = $2::jsonb, created_at = $3
+                WHERE decision_id = $1
+                """,
+                decision.decision_id,
+                payload,
+                decision.timestamp,
+            )
+        if result.split()[-1] == "0":
+            raise KeyError(f"decision not found: {decision.decision_id}")
+
     async def list_decisions(
         self,
         *,
@@ -196,23 +223,24 @@ class TimescaleDecisionStore(BaseDataStore):
         await self.ensure_ready()
         pool = await self._pool_or_create()
 
-        query = "SELECT payload::text FROM decisions"
+        clauses: list[str] = []
         params: list[object] = []
         if since is not None:
-            query += " WHERE created_at >= $1"
             params.append(since)
-        query += " ORDER BY created_at DESC"
+            clauses.append(f"created_at >= ${len(params)}")
+        if policy_ids:
+            params.append(policy_ids)
+            clauses.append(f"payload->>'policy_id' = ANY(${len(params)})")
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        query = f"SELECT payload::text FROM decisions{where} ORDER BY created_at DESC"
         if limit is not None and limit > 0:
-            query += f" LIMIT ${len(params) + 1}"
             params.append(limit)
+            query += f" LIMIT ${len(params)}"
 
         async with pool.acquire() as conn:
             rows = await conn.fetch(query, *params)
 
-        decisions = [Decision.model_validate_json(row[0]) for row in rows]
-        if policy_ids:
-            decisions = filter_decisions(decisions, policy_ids=policy_ids)
-        return decisions
+        return [Decision.model_validate_json(row[0]) for row in rows]
 
     async def close(self) -> None:
         """Gracefully close pool for process shutdown hooks and tests."""

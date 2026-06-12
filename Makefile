@@ -10,7 +10,7 @@ down:
 	docker compose down
 
 test:
-	pytest
+	pytest tests/unit -m "not gpu and not integration"
 
 lint:
 	ruff check .

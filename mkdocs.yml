@@ -4,13 +4,12 @@ repo_url: https://github.com/artaasd95/RADA
 
 theme:
   name: material
-  logo: assets/logo.png
   palette:
     - scheme: default
       primary: indigo
 
 nav:
-  - Home: README.md
+  - Home: index.md
   - Architecture: architecture-overview.md
   - Calc engine: calc.md
   - Observability: observability.md

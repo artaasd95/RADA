@@ -2,6 +2,14 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiFetch } from "../api/rest";
 
+function parsePositiveNumber(value, field) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`${field} must be a positive number`);
+  }
+  return parsed;
+}
+
 export function Decisions() {
   const [symbol, setSymbol] = useState("BTCUSD");
   const [price, setPrice] = useState("42000");
@@ -10,12 +18,22 @@ export function Decisions() {
   const [audit, setAudit] = useState(null);
   const [error, setError] = useState("");
 
+  const loadAudit = async (decisionId) => {
+    try {
+      const chain = await apiFetch(`/audit/decision/${decisionId}`);
+      setAudit(chain);
+    } catch (err) {
+      setError(`Audit fetch failed: ${err.message}`);
+      setAudit(null);
+    }
+  };
+
   const ingest = useMutation({
     mutationFn: async () => {
       const body = {
         symbol,
-        price: Number(price),
-        volume: Number(volume),
+        price: parsePositiveNumber(price, "Price"),
+        volume: parsePositiveNumber(volume, "Volume"),
         timestamp: new Date().toISOString(),
       };
       return apiFetch("/ingest", { method: "POST", body: JSON.stringify(body) });
@@ -23,8 +41,7 @@ export function Decisions() {
     onSuccess: async (data) => {
       setError("");
       setLastDecisionId(data.decision_id);
-      const chain = await apiFetch(`/audit/decision/${data.decision_id}`);
-      setAudit(chain);
+      await loadAudit(data.decision_id);
     },
     onError: (err) => setError(err.message),
   });
@@ -34,8 +51,7 @@ export function Decisions() {
     onSuccess: async (data) => {
       setError("");
       setLastDecisionId(data.decision_id);
-      const chain = await apiFetch(`/audit/decision/${data.decision_id}`);
-      setAudit(chain);
+      await loadAudit(data.decision_id);
     },
     onError: (err) => setError(err.message),
   });

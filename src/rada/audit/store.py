@@ -41,6 +41,14 @@ class AuditStore:
                     END
                     """
                 )
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_audit_events_decision_id "
+                    "ON audit_events(decision_id)"
+                )
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_audit_events_timestamp "
+                    "ON audit_events(timestamp)"
+                )
                 conn.commit()
 
         await asyncio.to_thread(_run)

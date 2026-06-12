@@ -17,6 +17,8 @@ class RollingPnLTracker:
     _values: deque[float] = field(default_factory=deque)
 
     def record(self, decision: Decision) -> float:
+        if self.window <= 0:
+            raise ValueError("window must be > 0")
         pnl = pnl_stub_from_decision(decision)
         self._values.append(pnl)
         while len(self._values) > self.window:

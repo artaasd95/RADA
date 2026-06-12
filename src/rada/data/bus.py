@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 
 from rada.schemas import MarketEvent
+
+logger = logging.getLogger(__name__)
 
 
 class BaseEventBus(ABC):
@@ -21,6 +24,9 @@ class BaseEventBus(ABC):
     @abstractmethod
     async def dequeue(self) -> MarketEvent:
         """Block until one market event is available."""
+
+    async def close(self) -> None:
+        """Release backend resources when supported."""
 
 
 class InMemoryEventBus(BaseEventBus):
@@ -50,6 +56,9 @@ class RedisEventBus(BaseEventBus):
         _, payload = await self._client.blpop(self._channel)
         return MarketEvent.model_validate_json(payload)
 
+    async def close(self) -> None:
+        await self._client.aclose()
+
 
 class KafkaEventBus(BaseEventBus):
     """Kafka-backed bus using aiokafka when installed; falls back to in-memory."""
@@ -74,6 +83,7 @@ class KafkaEventBus(BaseEventBus):
             self._consumer_cls = AIOKafkaConsumer
             self._use_kafka = True
         except ImportError:
+            logger.warning("aiokafka not installed; KafkaEventBus uses in-memory fallback")
             self._use_kafka = False
 
     async def _ensure_kafka(self) -> None:
@@ -104,9 +114,17 @@ class KafkaEventBus(BaseEventBus):
         msg = await self._consumer.getone()
         return MarketEvent.model_validate_json(msg.value.decode())
 
+    async def close(self) -> None:
+        if self._producer is not None:
+            await self._producer.stop()
+            self._producer = None
+        if self._consumer is not None:
+            await self._consumer.stop()
+            self._consumer = None
+
 
 class ZeroMQEventBus(BaseEventBus):
-    """ZeroMQ PUB/SUB bus; uses in-memory fallback when pyzmq unavailable."""
+    """ZeroMQ PUB/SUB bus; local dequeue only (cross-process subscribe not implemented)."""
 
     def __init__(self, endpoint: str) -> None:
         self._endpoint = endpoint
@@ -124,6 +142,7 @@ class ZeroMQEventBus(BaseEventBus):
             self._zmq_asyncio = zmq.asyncio
             self._use_zmq = True
         except ImportError:
+            logger.warning("pyzmq not installed; ZeroMQEventBus uses in-memory fallback")
             self._use_zmq = False
 
     async def _ensure_zmq(self) -> None:
@@ -160,6 +179,10 @@ async def build_event_bus(mode: str | None = None) -> BaseEventBus:
         try:
             return RedisEventBus(redis_url)
         except Exception:
+            logger.exception(
+                "failed to initialize RedisEventBus for %s; falling back to in-memory",
+                redis_url,
+            )
             return InMemoryEventBus()
 
     if selected == "kafka":

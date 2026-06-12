@@ -8,13 +8,13 @@ from time import perf_counter
 
 from rada.interfaces import BaseRiskOptimizer
 from rada.schemas import ActionDirection, DecisionTrace, MarketEvent, ProposedAction
+from rada.search.constants import DEFAULT_CAPITAL_NOTIONAL
 
 
 @dataclass(slots=True)
 class MCTSConfig:
     iterations: int = 64
     rollout_depth: int = 3
-    exploration: float = 1.414
 
 
 class TrinityPolicyStub:
@@ -119,7 +119,7 @@ def _rollout_reward(event: MarketEvent, action: ProposedAction, *, depth: int) -
     }[action.direction]
     size = action.risk_adjusted_size if action.risk_adjusted_size is not None else action.size
     scale = max(depth, 1)
-    return direction_multiplier * size * event.price / (100000.0 * scale)
+    return direction_multiplier * size * event.price / (DEFAULT_CAPITAL_NOTIONAL * scale)
 
 
 async def run_mcts_benchmark_fixture(

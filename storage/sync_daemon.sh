@@ -11,6 +11,8 @@ cd "${REPO_ROOT}"
 
 while true; do
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] checking disk usage (threshold=${THRESHOLD}%)"
-  python "${SCRIPT_DIR}/ftp_sync.py" --check-threshold "${THRESHOLD}" --local-root "${REPO_ROOT}" || true
+  if ! python "${SCRIPT_DIR}/ftp_sync.py" --check-threshold "${THRESHOLD}" --local-root "${REPO_ROOT}"; then
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ftp sync failed (exit $?)" >&2
+  fi
   sleep "${INTERVAL}"
 done

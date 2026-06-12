@@ -19,6 +19,10 @@ class BaseDataStore(ABC):
     async def get_decision(self, decision_id: str) -> Decision | None:
         """Fetch one decision artifact by immutable identifier."""
 
+    async def update_decision(self, decision: Decision) -> None:
+        """Update a persisted decision (e.g. attach reflection outcome)."""
+        raise NotImplementedError(f"{type(self).__name__} does not support update_decision")
+
     async def list_decisions(
         self,
         *,

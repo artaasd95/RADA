@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
-from rada.calc.runner import run_event_calcs
+from rada.calc.runner import run_event_calcs, synthetic_context_from_results
 from rada.core.reasoner_loop import ActionTarget, ReasonerLoop
 from rada.interfaces import BaseDataStore, BasePolicy, BaseReasoner, BaseRiskOptimizer
 from rada.schemas import ActionDirection, Decision, DecisionTrace, MarketEvent, ProposedAction
@@ -67,23 +68,28 @@ class DecisionLoop:
         self._cvar_limit = cvar_limit
         self._audit_writer = audit_writer
 
+    def _effective_cvar_limit(self, synthetic_cvar: float | None) -> float:
+        if synthetic_cvar is None or math.isnan(synthetic_cvar):
+            return self._cvar_limit
+        return min(self._cvar_limit, max(synthetic_cvar, 0.01))
+
     def _select_from_targets(
         self,
         event: MarketEvent,
         trace: DecisionTrace,
         targets: list[ActionTarget],
+        *,
+        cvar_limit: float,
     ) -> ProposedAction:
+        _ = trace
         candidates = [t.action for t in targets]
         if not candidates:
             return ProposedAction(direction=ActionDirection.HOLD, size=0)
-        selected = select_cvar_feasible_action(
+        return select_cvar_feasible_action(
             candidates,
             price=event.price,
-            tailwarp=TailWarpStub(cvar_limit=self._cvar_limit),
+            tailwarp=TailWarpStub(cvar_limit=cvar_limit),
         )
-        if selected.direction == ActionDirection.HOLD and candidates:
-            _ = trace
-        return selected
 
     async def process_one(self, event: MarketEvent) -> Decision:
         from rada.observability.metrics import LatencyTimer, get_metrics
@@ -97,25 +103,41 @@ class DecisionLoop:
 
             with tracer.start_span("calc") as calc_span:
                 calc_results = run_event_calcs(event)
-                verified = {r.expression: r.value for r in calc_results}
-                cvar_value = verified.get("cvar", 0.0)
+                synthetic = synthetic_context_from_results(calc_results)
+                cvar_raw = synthetic.get("cvar")
+                cvar_value = cvar_raw if cvar_raw is not None else float("nan")
+                effective_cvar_limit = self._effective_cvar_limit(
+                    cvar_raw if cvar_raw is not None else None
+                )
                 calc_span.set_attribute("cvar_value", cvar_value)
-                self._cvar_limit = min(self._cvar_limit, max(cvar_value, 0.01))
 
             with tracer.start_span("select") as select_span:
                 trace, targets = await self._reasoner_loop.propose_targets(event)
+                assumptions = list(trace.assumptions)
+                if not math.isnan(cvar_value):
+                    assumptions.append(f"synthetic_cvar={cvar_value:.4f}")
                 trace = trace.model_copy(
                     update={
                         "calc_results": [r.model_dump() for r in calc_results],
-                        "verified_context": verified,
-                        "assumptions": list(trace.assumptions) + [f"verified_cvar={cvar_value:.4f}"],
+                        "synthetic_context": synthetic,
+                        "assumptions": assumptions,
                     }
                 )
-                proposed = self._select_from_targets(event, trace, targets)
+                proposed = self._select_from_targets(
+                    event,
+                    trace,
+                    targets,
+                    cvar_limit=effective_cvar_limit,
+                )
                 if proposed.direction == ActionDirection.HOLD:
                     proposed = await self._policy.propose(event, trace)
                 if self._search_loop is not None and self._search_loop.enabled:
-                    proposed = await self._search_loop.refine_proposal(event, trace, proposed)
+                    proposed = await self._search_loop.refine_proposal(
+                        event,
+                        trace,
+                        proposed,
+                        cvar_limit=effective_cvar_limit,
+                    )
                 select_span.set_attribute("direction", proposed.direction.value)
 
             with tracer.start_span("risk_gate", cvar_value=cvar_value) as gate_span:
@@ -145,7 +167,7 @@ class DecisionLoop:
                 self._audit_writer.emit(
                     AuditEventType.CALC,
                     decision_id=decision.decision_id,
-                    payload_after={"verified_context": verified},
+                    payload_after={"synthetic_context": synthetic},
                 )
 
             metrics.inc("rada_decisions_total")

@@ -7,7 +7,13 @@ import json
 import sqlite3
 from pathlib import Path
 
+from datetime import datetime
+
 from rada.feedback.schemas import FeedbackAction, HumanFeedback
+
+
+class FeedbackDuplicateError(Exception):
+    """Raised when feedback_id already exists."""
 
 
 class FeedbackStore:
@@ -49,46 +55,63 @@ class FeedbackStore:
 
         def _run() -> None:
             with sqlite3.connect(self._db_path) as conn:
-                conn.execute(
-                    """
-                    INSERT INTO human_feedback
-                    (feedback_id, decision_id, action, note, timestamp, reviewer, status)
-                    VALUES (?, ?, ?, ?, ?, ?, 'submitted')
-                    """,
-                    (
-                        feedback.feedback_id,
-                        feedback.decision_id,
-                        feedback.action.value,
-                        feedback.note,
-                        feedback.timestamp.isoformat(),
-                        feedback.reviewer,
-                    ),
-                )
-                conn.commit()
+                try:
+                    conn.execute(
+                        """
+                        INSERT INTO human_feedback
+                        (feedback_id, decision_id, action, note, timestamp, reviewer, status)
+                        VALUES (?, ?, ?, ?, ?, ?, 'submitted')
+                        """,
+                        (
+                            feedback.feedback_id,
+                            feedback.decision_id,
+                            feedback.action.value,
+                            feedback.note,
+                            feedback.timestamp.isoformat(),
+                            feedback.reviewer,
+                        ),
+                    )
+                    conn.commit()
+                except sqlite3.IntegrityError as exc:
+                    raise FeedbackDuplicateError(
+                        f"feedback_id already exists: {feedback.feedback_id}"
+                    ) from exc
 
         await asyncio.to_thread(_run)
         return feedback
 
-    async def list_pending(self) -> list[HumanFeedback]:
+    async def list_pending(self, *, limit: int = 100) -> list[HumanFeedback]:
         await self.ensure_ready()
 
         def _run() -> list[HumanFeedback]:
             with sqlite3.connect(self._db_path) as conn:
                 rows = conn.execute(
-                    "SELECT feedback_id, decision_id, action, note, timestamp, reviewer "
-                    "FROM human_feedback WHERE action = ? ORDER BY timestamp DESC",
-                    (FeedbackAction.FLAG.value,),
+                    """
+                    SELECT feedback_id, decision_id, action, note, timestamp, reviewer
+                    FROM human_feedback
+                    WHERE action = ? AND status = 'submitted'
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                    """,
+                    (FeedbackAction.FLAG.value, limit),
                 ).fetchall()
-            return [
-                HumanFeedback(
-                    feedback_id=row[0],
-                    decision_id=row[1],
-                    action=FeedbackAction(row[2]),
-                    note=row[3],
-                    timestamp=__import__("datetime").datetime.fromisoformat(row[4]),
-                    reviewer=row[5],
+            seen: set[str] = set()
+            items: list[HumanFeedback] = []
+            for row in rows:
+                decision_id = row[1]
+                if decision_id in seen:
+                    continue
+                seen.add(decision_id)
+                items.append(
+                    HumanFeedback(
+                        feedback_id=row[0],
+                        decision_id=decision_id,
+                        action=FeedbackAction(row[2]),
+                        note=row[3],
+                        timestamp=datetime.fromisoformat(row[4]),
+                        reviewer=row[5],
+                    )
                 )
-                for row in rows
-            ]
+            return items
 
         return await asyncio.to_thread(_run)

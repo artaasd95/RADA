@@ -40,10 +40,13 @@ services:
     networks:
       - default
     environment:
+      RADA_ENV: production
       RADA_DATA_STORE_MODE: sqlite
       RADA_SQLITE_URL: sqlite:////app/data/rada.db
       RADA_EVENT_BUS_MODE: redis
-      RADA_DATABASE_URL: postgresql://rada:${RADA_POSTGRES_PASSWORD:-rada}@postgres:5432/rada
+      RADA_REDIS_URL: redis://redis:6379/0
+      RADA_DATABASE_URL: postgresql://rada:${RADA_POSTGRES_PASSWORD:-CHANGE_ME}@postgres:5432/rada
+      RADA_API_KEY: ${RADA_API_KEY:-}
       RADA_REASONER_MODE: mock
       RADA_OTEL_ENABLED: ${RADA_OTEL_ENABLED:-false}
     volumes:

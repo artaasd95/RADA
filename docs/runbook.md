@@ -26,8 +26,9 @@ Copy `.env.example` to `.env` and adjust for the target environment.
 | `RADA_LOG_LEVEL` | Log verbosity | `INFO` |
 | `RADA_EVENT_BUS_MODE` | Event bus backend: `inmemory`, `redis`, `kafka`, `zeromq` | `inmemory` |
 | `RADA_REDIS_URL` | Redis connection string | `redis://localhost:6379/0` |
-| `RADA_DATABASE_URL` | Postgres/Timescale URL | `postgresql+asyncpg://rada:rada@localhost:5432/rada` |
-| `RADA_SQLITE_URL` | SQLite fallback for local/CI | `sqlite+aiosqlite:///./rada.db` |
+| `RADA_DATABASE_URL` | Postgres/Timescale URL (required when `RADA_DATA_STORE_MODE=timescale`) | _(unset — set explicitly)_ |
+| `RADA_SQLITE_URL` | SQLite fallback for local/CI | `sqlite:///./rada.db` |
+| `RADA_API_KEY` | API key for `/ingest`, `/audit/*`, `/feedback/*` | _(empty in dev — optional)_ |
 | `RADA_KAFKA_BOOTSTRAP` | Kafka brokers (when overlay enabled) | `localhost:9092` |
 | `RADA_ZMQ_ENDPOINT` | ZeroMQ bind/connect endpoint | `tcp://127.0.0.1:5555` |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | Postgres container bootstrap | `rada` |

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from rada.schemas import MarketEvent
+from rada.search.constants import DEFAULT_CAPITAL_NOTIONAL
 
 
 def _signal_strength(market_hits: list[dict[str, str]]) -> float:
@@ -57,7 +58,7 @@ def nash_spread_search_stub(
     else:
         direction = "HOLD"
 
-    size = max(reference_price / 100000.0, 0.0)
+    size = max(reference_price / DEFAULT_CAPITAL_NOTIONAL, 0.0)
 
     return {
         "symbol": symbol,

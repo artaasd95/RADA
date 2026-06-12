@@ -26,3 +26,26 @@ jobs:
 
       - name: Unit tests
         run: pytest tests/unit -q --strict-markers -m "not gpu and not integration"
+
+      - name: Integration tests
+        run: pytest tests/integration -q --strict-markers -m integration
+
+  dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dashboard dependencies
+        working-directory: dashboard
+        run: npm ci
+
+      - name: Build dashboard
+        working-directory: dashboard
+        run: npm run build

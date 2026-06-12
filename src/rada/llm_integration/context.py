@@ -211,26 +211,54 @@ class ContextBudget:
             )
 
         order = {seg.name: idx for idx, seg in enumerate(segments)}
-        ranked = sorted(segments, key=lambda s: (s.priority, order[s.name]))
+        protected = [seg for seg in segments if seg.protected]
+        unprotected = [seg for seg in segments if not seg.protected]
+        ranked_unprotected = sorted(unprotected, key=lambda s: (s.priority, order[s.name]))
 
         kept: list[tuple[str, str]] = []
         dropped: list[str] = []
         truncated: list[str] = []
         budget = self.max_input_tokens
 
-        for seg in ranked:
-            tokens = estimate_tokens(seg.content, model_id=self.model_id)
-            if tokens <= budget:
-                kept.append((seg.name, seg.content))
-                budget -= tokens
-                continue
+        def _separator_reserve(count: int) -> int:
+            if count <= 1:
+                return 0
+            return estimate_tokens("\n\n" * (count - 1), model_id=self.model_id)
 
-            if budget > 0:
-                trimmed = _truncate_to_tokens(seg.content, budget, model_id=self.model_id)
+        for seg in protected:
+            tokens = estimate_tokens(seg.content, model_id=self.model_id)
+            reserve = _separator_reserve(len(kept) + 1)
+            if tokens + reserve > budget:
+                trimmed = _truncate_to_tokens(
+                    seg.content,
+                    max(1, budget - reserve),
+                    model_id=self.model_id,
+                )
                 if trimmed:
                     kept.append((seg.name, trimmed))
                     truncated.append(seg.name)
-                    budget -= estimate_tokens(trimmed, model_id=self.model_id)
+                    budget -= estimate_tokens(trimmed, model_id=self.model_id) + reserve
+                else:
+                    dropped.append(seg.name)
+                continue
+            kept.append((seg.name, seg.content))
+            budget -= tokens + reserve
+
+        for seg in ranked_unprotected:
+            tokens = estimate_tokens(seg.content, model_id=self.model_id)
+            reserve = _separator_reserve(len(kept) + 1)
+            if tokens + reserve <= budget:
+                kept.append((seg.name, seg.content))
+                budget -= tokens + reserve
+                continue
+
+            remaining = budget - reserve
+            if remaining > 0:
+                trimmed = _truncate_to_tokens(seg.content, remaining, model_id=self.model_id)
+                if trimmed:
+                    kept.append((seg.name, trimmed))
+                    truncated.append(seg.name)
+                    budget -= estimate_tokens(trimmed, model_id=self.model_id) + reserve
                     continue
 
             dropped.append(seg.name)

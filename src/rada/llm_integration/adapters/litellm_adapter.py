@@ -40,7 +40,11 @@ class LiteLLMAdapter(LLMProvider):
         )
         started = time.perf_counter()
         last_error: Exception | None = None
-        for candidate in self._models or [model_id]:
+        candidates: list[str] = []
+        for candidate in [model_id, *(self._models or [])]:
+            if candidate not in candidates:
+                candidates.append(candidate)
+        for candidate in candidates:
             try:
                 response = await litellm.acompletion(
                     model=candidate,

@@ -42,15 +42,24 @@ export function Overview() {
           <p className="mt-2 text-sm text-rose-400">Unreachable: {health.error.message}</p>
         )}
         {health.isSuccess && (
-          <p className="mt-2 text-sm text-emerald-400">Healthy — {health.data.status}</p>
+          <p className="mt-2 text-sm text-emerald-400">
+            Healthy — {health.data?.status ?? "unknown"}
+          </p>
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard label="Decisions processed" value={legacy.decisions_processed ?? obs.decisions_total ?? "—"} />
-        <MetricCard label="Risk gate passes" value={legacy.risk_gate_passes ?? "—"} />
-        <MetricCard label="Reflection queued" value={legacy.reflection_enqueued ?? "—"} />
-      </div>
+      {metrics.isLoading && <p className="text-sm dark:text-slate-400">Loading metrics…</p>}
+      {metrics.isError && (
+        <p className="text-sm text-rose-400">Metrics unavailable: {metrics.error.message}</p>
+      )}
+
+      {metrics.isSuccess && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <MetricCard label="Decisions processed" value={legacy.decisions_processed ?? obs.decisions_total ?? "—"} />
+          <MetricCard label="Risk gate passes" value={legacy.risk_gate_passes ?? "—"} />
+          <MetricCard label="Reflection queued" value={legacy.reflection_enqueued ?? "—"} />
+        </div>
+      )}
     </div>
   );
 }

@@ -7,9 +7,10 @@ Observability hooks for RADA align with post-MVP **S9 production monitoring** in
 | Endpoint | Format | Purpose |
 |----------|--------|---------|
 | `GET /health` | JSON | Liveness (`{"status":"ok"}`) |
-| `GET /metrics` | Prometheus text | Counters/gauges from `src/rada/utils/metrics.py` |
+| `GET /metrics` | Prometheus text | Legacy (`utils/metrics.py`) + observability (`observability/metrics.py`) |
+| `GET /metrics/json` | JSON | Debug snapshot of both metric facades |
 
-### Exposed metrics (MVP)
+### Legacy metrics (`src/rada/utils/metrics.py`)
 
 | Metric | Type | Description |
 |--------|------|-------------|
@@ -20,6 +21,16 @@ Observability hooks for RADA align with post-MVP **S9 production monitoring** in
 | `rada_reflection_processed_total` | counter | Decisions processed by reflection loop |
 | `rada_reflection_mean_faithfulness` | gauge | Rolling mean faithfulness from audits |
 | `rada_search_invocations_total` | counter | Search loop invocations when enabled |
+
+### Observability metrics (`src/rada/observability/metrics.py`)
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `rada_decisions_total` | counter | Decisions completed (decision loop) |
+| `rada_risk_gate_rejections_total` | counter | Risk gate rejections |
+| `rada_loop_errors_total` | counter | Background loop errors |
+| `rada_audit_queue_drops_total` | counter | Audit events dropped when queue is full |
+| `rada_reflection_queue_drops_total` | counter | Reflection decisions dropped when queue is full |
 
 ## Log structure
 

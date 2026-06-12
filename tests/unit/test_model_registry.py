@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -75,8 +74,7 @@ def test_default_registry_lists_seven_models() -> None:
     assert "qwen3-0.6b" in registry.list_model_ids()
 
 
-def test_env_expansion_in_defaults(monkeypatch: pytest.MonkeyPatch, registry_path: Path) -> None:
+def test_env_expansion_in_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("RADA_MODEL_CACHE_ROOT", "/custom/cache")
     registry = load_model_registry()
-    # default registry uses env expansion on load
-    assert registry.defaults.cache_root or os.environ.get("RADA_MODEL_CACHE_ROOT")
+    assert registry.defaults.cache_root == "/custom/cache"

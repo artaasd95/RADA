@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from datetime import UTC, datetime
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from rada.audit.schemas import AuditEventType
 from rada.audit.writer import AuditWriter
-from rada.feedback.schemas import HumanFeedback
-from rada.feedback.store import FeedbackStore
+from rada.feedback.schemas import HumanFeedback, HumanFeedbackSubmit
+from rada.feedback.store import FeedbackDuplicateError, FeedbackStore
+from rada.security.auth import require_api_key
 
-router = APIRouter(prefix="/feedback", tags=["feedback"])
+router = APIRouter(prefix="/feedback", tags=["feedback"], dependencies=[Depends(require_api_key)])
 
 
 def _feedback_store(request: Request) -> FeedbackStore:
@@ -30,9 +34,20 @@ def _audit_writer(request: Request) -> AuditWriter:
 
 
 @router.post("/submit")
-async def submit_feedback(feedback: HumanFeedback, request: Request) -> dict:
+async def submit_feedback(payload: HumanFeedbackSubmit, request: Request) -> dict:
     store = _feedback_store(request)
-    saved = await store.submit(feedback)
+    feedback = HumanFeedback(
+        feedback_id=str(uuid4()),
+        decision_id=payload.decision_id,
+        action=payload.action,
+        note=payload.note,
+        timestamp=datetime.now(tz=UTC),
+        reviewer=payload.reviewer,
+    )
+    try:
+        saved = await store.submit(feedback)
+    except FeedbackDuplicateError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     _audit_writer(request).emit(
         AuditEventType.HUMAN_FEEDBACK,
         decision_id=saved.decision_id,

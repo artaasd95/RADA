@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from rada.llm_integration.adapters._http_base import OpenAICompatibleAdapter
 from rada.llm_integration.adapters.litellm_adapter import LiteLLMAdapter
@@ -31,7 +34,8 @@ class CustomAdapter(OpenAICompatibleAdapter):
             return await self._mock.complete(prompt, model_id, **kwargs)
         try:
             return await super().complete(prompt, model_id, **kwargs)
-        except Exception:  # noqa: BLE001 — optional fallback chain
+        except Exception as exc:  # noqa: BLE001 — optional fallback chain
+            logger.warning("custom adapter failed for model_id=%s: %s", model_id, exc)
             if self._litellm is not None:
                 return await self._litellm.complete(prompt, model_id, **kwargs)
             return await self._mock.complete(prompt, model_id, **kwargs)

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
-from fastapi import FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Request, Response
+
+logger = logging.getLogger(__name__)
 
 from rada.audit.api import router as audit_router
 from rada.audit.store import AuditStore
@@ -18,6 +21,7 @@ from rada.core.decision_loop import (
     NoOpReasoner,
     PassThroughRiskOptimizer,
 )
+from rada.core.search_loop import SearchLoop
 from rada.feedback.auto_flag import build_flag_feedback, should_auto_flag
 from rada.core.reasoner_loop import ReasonerLoop
 from rada.core.reflection_loop import ReflectionLoop
@@ -30,6 +34,7 @@ from rada.feedback.store import FeedbackStore
 from rada.interfaces import BaseDataStore
 from rada.observability.metrics import get_metrics
 from rada.schemas import Decision, MarketEvent
+from rada.security.auth import require_api_key
 from rada.utils.metrics import (
     get_metrics_snapshot,
     record_decision_processed,
@@ -41,7 +46,7 @@ from rada.utils.metrics import (
 class RuntimeSettings:
     event_bus_mode: str = os.getenv("RADA_EVENT_BUS_MODE", "inmemory")
     data_store_mode: str = os.getenv("RADA_DATA_STORE_MODE", "sqlite")
-    database_url: str = os.getenv("RADA_DATABASE_URL", "postgresql://rada:rada@localhost:5432/rada")
+    database_url: str = os.getenv("RADA_DATABASE_URL", "")
     sqlite_url: str = os.getenv("RADA_SQLITE_URL", "sqlite:///./rada.db")
     audit_db_path: str = os.getenv("RADA_AUDIT_DB_PATH", "./rada_audit.db")
     feedback_db_path: str = os.getenv("RADA_FEEDBACK_DB_PATH", "./rada_feedback.db")
@@ -57,6 +62,8 @@ def build_data_store(settings: RuntimeSettings) -> BaseDataStore:
     if mode == "sqlite":
         return SQLiteDecisionStore(settings.sqlite_url)
     if mode == "timescale":
+        if not settings.database_url:
+            raise ValueError("RADA_DATABASE_URL is required when RADA_DATA_STORE_MODE=timescale")
         return TimescaleDecisionStore(settings.database_url)
 
     raise ValueError(f"Unsupported RADA_DATA_STORE_MODE={settings.data_store_mode!r}")
@@ -66,6 +73,8 @@ def build_reasoner(settings: RuntimeSettings):
     mode = settings.reasoner_mode.lower().strip()
     if mode in {"mock", "scenario"}:
         return ScenarioReasoner()
+    if mode not in {"", "noop"}:
+        logger.warning("Unknown RADA_REASONER_MODE=%r, using NoOpReasoner", mode)
     return NoOpReasoner()
 
 
@@ -88,12 +97,15 @@ def build_decision_loop(
 ) -> DecisionLoop:
     settings = settings or RuntimeSettings()
     reasoner = build_reasoner(settings)
+    risk_optimizer = PassThroughRiskOptimizer()
+    search_loop = SearchLoop(risk_optimizer=risk_optimizer)
     return DecisionLoop(
         reasoner=reasoner,
         policy=HoldPolicy(),
-        risk_optimizer=PassThroughRiskOptimizer(),
+        risk_optimizer=risk_optimizer,
         data_store=store,
         reasoner_loop=ReasonerLoop(reasoner),
+        search_loop=search_loop,
         audit_writer=audit_writer,
     )
 
@@ -112,9 +124,14 @@ async def run_bootstrap_once(
     async for event in synthetic_market_events(count=event_count):
         await event_bus.enqueue(event)
 
-    first_event = await event_bus.dequeue()
-    decision = await loop.process_one(first_event)
-    record_decision_processed()
+    decision: Decision | None = None
+    for _ in range(event_count):
+        event = await event_bus.dequeue()
+        decision = await loop.process_one(event)
+        record_decision_processed()
+    if decision is None:
+        msg = "bootstrap produced no decisions"
+        raise RuntimeError(msg)
     return decision
 
 
@@ -127,9 +144,14 @@ async def run_bootstrap_once_inmemory(event_count: int = 1) -> Decision:
     async for event in synthetic_market_events(count=event_count):
         await event_bus.enqueue(event)
 
-    first_event = await event_bus.dequeue()
-    decision = await loop.process_one(first_event)
-    record_decision_processed()
+    decision: Decision | None = None
+    for _ in range(event_count):
+        event = await event_bus.dequeue()
+        decision = await loop.process_one(event)
+        record_decision_processed()
+    if decision is None:
+        msg = "bootstrap produced no decisions"
+        raise RuntimeError(msg)
     return decision
 
 
@@ -193,7 +215,7 @@ async def metrics_json() -> dict[str, object]:
     return {"legacy": get_metrics_snapshot(), "observability": get_metrics().snapshot()}
 
 
-@app.post("/ingest", tags=["demo"])
+@app.post("/ingest", tags=["demo"], dependencies=[Depends(require_api_key)])
 async def ingest_event(event: MarketEvent, request: Request) -> dict[str, str]:
     """Ingest one market event through the decision pipeline."""
     loop: DecisionLoop = request.app.state.decision_loop

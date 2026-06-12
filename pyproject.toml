@@ -11,11 +11,10 @@ requires-python = ">=3.11"
 authors = [
   { name = "RADA Team" }
 ]
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 dependencies = [
   "fastapi>=0.111.0",
   "pydantic>=2.7.0",
-  "asyncio>=3.4.3",
   "redis>=5.0.4",
   "asyncpg>=0.29.0",
   "uvicorn[standard]>=0.30.0",

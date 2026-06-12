@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+_SRC_ROOT = _REPO_ROOT / "src"
+if str(_SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SRC_ROOT))
 
 from rada.training.config import TrainingConfig  # noqa: E402
 from rada.training.dataset import load_training_dataset  # noqa: E402
@@ -49,11 +51,13 @@ def parse_args() -> argparse.Namespace:
         default="reflection",
     )
     parser.add_argument("--lora-rank", type=int, default=16)
+    parser.add_argument("--resume-from", default=None, help="Checkpoint path for resume")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    resume_from = args.resume_from or os.environ.get("RADA_RESUME_FROM")
     config = TrainingConfig(
         model_id=args.model_id,
         backend=args.backend,
@@ -64,6 +68,9 @@ def main() -> int:
         epochs=args.epochs,
         batch_size=args.batch_size,
         output_run_id=args.output_run_id,
+        resume_from=resume_from,
+        checkpoint_interval=int(os.environ.get("RADA_CHECKPOINT_INTERVAL", "100")),
+        checkpoint_keep_last=int(os.environ.get("RADA_CHECKPOINT_KEEP_LAST", "3")),
     )
     config.lora.rank = args.lora_rank
 

@@ -6,7 +6,9 @@ from datetime import UTC, datetime
 import pytest
 
 from rada.core.decision_loop import DecisionLoop, HoldPolicy, NoOpReasoner, PassThroughRiskOptimizer
-from rada.data.cards import DecisionExportRow, FeedbackRecord
+from pydantic import ValidationError
+
+from rada.data.cards import DecisionExportRow, FeedbackLabels, FeedbackRecord
 from rada.data.storage import InMemoryDecisionStore
 from rada.schemas import MarketEvent
 
@@ -55,3 +57,9 @@ async def test_feedback_record_validates_score_bounds() -> None:
     record = FeedbackRecord.from_decision_stub(decision, score=0.75)
     assert record.labels.score == 0.75
     json.loads(record.model_dump_json())
+
+
+@pytest.mark.unit
+def test_feedback_labels_reject_invalid_score() -> None:
+    with pytest.raises(ValidationError):
+        FeedbackLabels(score=1.5)

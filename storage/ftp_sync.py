@@ -31,6 +31,8 @@ def _remote_date_prefix(remote_root: str, repo: str) -> str:
 
 
 def _ensure_ftp_dirs(ftp: ftplib.FTP, remote_path: str) -> None:
+    """Create remote directories from FTP root using absolute paths."""
+    ftp.cwd("/")
     parts = [p for p in remote_path.split("/") if p]
     current = ""
     for part in parts:
@@ -50,6 +52,7 @@ def _remote_file_size(ftp: ftplib.FTP, remote_file: str) -> int | None:
 
 
 def _upload_file_ftp(ftp: ftplib.FTP, local: Path, remote_file: str) -> bool:
+    ftp.cwd("/")
     remote_size = _remote_file_size(ftp, remote_file)
     local_size = local.stat().st_size
     if remote_size is not None and remote_size == local_size:

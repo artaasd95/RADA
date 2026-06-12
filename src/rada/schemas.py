@@ -49,6 +49,7 @@ class DecisionTrace(BaseModel):
     faithfulness_score: float | None = None
     calc_results: list[dict[str, Any]] = Field(default_factory=list)
     verified_context: dict[str, float] = Field(default_factory=dict)
+    synthetic_context: dict[str, float] = Field(default_factory=dict)
 
 
 class ProposedAction(BaseModel):

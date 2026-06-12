@@ -7,20 +7,28 @@ from dataclasses import dataclass
 from rada.schemas import ActionDirection, ProposedAction
 
 
+from rada.search.constants import DEFAULT_CAPITAL_NOTIONAL
+
+
 @dataclass(slots=True)
 class TailWarpStub:
-    """Mock TailWarp adapter returning deterministic tail-loss estimates."""
+    """Mock TailWarp adapter returning tail-loss as a fraction of capital."""
 
     cvar_limit: float = 0.05
+    capital: float = DEFAULT_CAPITAL_NOTIONAL
 
     def estimate_tail_loss(self, action: ProposedAction, *, price: float) -> float:
+        """Return estimated tail loss as a fraction of capital (comparable to CVaR fractions)."""
+        if price <= 0:
+            return 0.0
         size = action.risk_adjusted_size if action.risk_adjusted_size is not None else action.size
         direction_scale = {
             ActionDirection.BUY: 1.0,
             ActionDirection.SELL: 1.2,
             ActionDirection.HOLD: 0.0,
         }[action.direction]
-        return direction_scale * size * price / 1_000_000.0
+        notional = direction_scale * size * price
+        return notional / self.capital
 
 
 def select_cvar_feasible_action(

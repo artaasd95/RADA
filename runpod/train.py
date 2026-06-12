@@ -32,8 +32,11 @@ class _Tee:
             stream.flush()
 
 
-def _find_latest_checkpoint(root: Path) -> Path | None:
-    patterns = [str(root / "checkpoints" / "checkpoint-*"), str(root / "**" / "checkpoint-*")]
+def _find_latest_checkpoint(adapter_dir: Path) -> Path | None:
+    patterns = [
+        str(adapter_dir / "checkpoints" / "checkpoint-*"),
+        str(adapter_dir / "**" / "checkpoint-*"),
+    ]
     candidates: list[Path] = []
     for pattern in patterns:
         candidates.extend(Path(p) for p in glob.glob(pattern, recursive=True))
@@ -62,6 +65,13 @@ def _load_config(path: Path) -> dict:
         return yaml.safe_load(handle)
 
 
+def _adapter_dir(run_id: str, model_id: str) -> Path:
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    from rada.models.resolver import get_adapter_root
+
+    return get_adapter_root() / run_id / model_id
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="RunPod reflection training wrapper")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG))
@@ -70,7 +80,9 @@ def main() -> int:
 
     cfg = _load_config(Path(args.config))
     run_id = cfg.get("output_run_id", "runpod")
-    log_dir = REPO_ROOT / "experiments" / "adapters" / run_id
+    model_id = cfg["model_id"]
+    adapter_dir = _adapter_dir(run_id, model_id)
+    log_dir = adapter_dir
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "train.log"
 
@@ -80,7 +92,7 @@ def main() -> int:
         "--backend",
         cfg.get("backend", "unsloth"),
         "--model-id",
-        cfg["model_id"],
+        model_id,
         "--data-source",
         cfg.get("data_source", "distilled"),
         "--epochs",
@@ -91,16 +103,29 @@ def main() -> int:
         run_id,
         "--method",
         cfg.get("method", "reflection"),
+        "--lora-rank",
+        str(cfg.get("lora_rank", 16)),
     ]
     if cfg.get("distilled_name"):
         cmd.extend(["--distilled-name", cfg["distilled_name"]])
+    if cfg.get("data_path"):
+        cmd.extend(["--data", cfg["data_path"]])
+    if cfg.get("distilled_root"):
+        cmd.extend(["--distilled-root", cfg["distilled_root"]])
+
+    resume_from = os.environ.get("RADA_RESUME_FROM")
+    if args.resume == "auto":
+        latest = _find_latest_checkpoint(adapter_dir)
+        if latest is not None:
+            resume_from = str(latest)
+            print(f"[runpod] auto-resume from {latest}")
+
+    if resume_from:
+        cmd.extend(["--resume-from", resume_from])
 
     env = {**os.environ}
-    if args.resume == "auto":
-        latest = _find_latest_checkpoint(log_dir)
-        if latest is not None:
-            env["RADA_RESUME_FROM"] = str(latest)
-            print(f"[runpod] auto-resume from {latest}")
+    if resume_from:
+        env["RADA_RESUME_FROM"] = resume_from
 
     stop_event = threading.Event()
     monitor = threading.Thread(target=_disk_sync_loop, args=(stop_event,), daemon=True)
