@@ -1,14 +1,20 @@
 <p align="center">
-  <img src="assets/logo.png" alt="RADA logo placeholder" width="120" />
+  <img src="assets/banner.png" alt="RADA — Risk-Aware Decision Agent" width="100%" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/artaasd95/RADA/actions/workflows/ci.yml"><img src="https://github.com/artaasd95/RADA/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-3776AB?logo=python&logoColor=white" alt="Python 3.11+" /></a>
+  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.111+-009688?logo=fastapi&logoColor=white" alt="FastAPI" /></a>
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white" alt="Docker" /></a>
+  <a href="https://github.com/artaasd95/RADA"><img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version 1.0.0" /></a>
+  <a href="https://github.com/artaasd95/RADA/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?logo=opensourceinitiative&logoColor=white" alt="License: MIT" /></a>
+  <a href="https://github.com/artaasd95/RADA"><img src="https://img.shields.io/github/stars/artaasd95/RADA?style=social" alt="GitHub stars" /></a>
 </p>
 
 # RADA
 
-[![CI](https://github.com/artaasd95/RADA/actions/workflows/ci.yml/badge.svg)](https://github.com/artaasd95/RADA/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-
-**Risk-Aware Decision Agent** — async Python service: ingest market events → verified calc → reasoner proposals → risk-gated decision → audit trail → human review → optional BYOK LLM inference.
+Async Python service: ingest market events → verified calc → reasoner proposals → risk-gated decision → audit trail → human review → optional BYOK LLM inference.
 
 ## Quickstart (production)
 
