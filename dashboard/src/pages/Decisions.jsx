@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiFetch } from "../api/rest";
 
@@ -10,22 +10,29 @@ function parsePositiveNumber(value, field) {
   return parsed;
 }
 
+function findDirection(events) {
+  for (const event of events || []) {
+    const direction = event?.payload_after?.proposed_action?.direction;
+    if (direction) {
+      return direction;
+    }
+  }
+  return "UNKNOWN";
+}
+
 export function Decisions() {
   const [symbol, setSymbol] = useState("BTCUSD");
-  const [price, setPrice] = useState("42000");
+  const [price, setPrice] = useState("62000");
   const [volume, setVolume] = useState("1.0");
-  const [lastDecisionId, setLastDecisionId] = useState("");
-  const [audit, setAudit] = useState(null);
   const [error, setError] = useState("");
+  const [audit, setAudit] = useState(null);
+  const [recent, setRecent] = useState([]);
+
+  const direction = useMemo(() => findDirection(audit?.events), [audit]);
 
   const loadAudit = async (decisionId) => {
-    try {
-      const chain = await apiFetch(`/audit/decision/${decisionId}`);
-      setAudit(chain);
-    } catch (err) {
-      setError(`Audit fetch failed: ${err.message}`);
-      setAudit(null);
-    }
+    const chain = await apiFetch(`/audit/decision/${decisionId}`);
+    setAudit(chain);
   };
 
   const ingest = useMutation({
@@ -40,8 +47,17 @@ export function Decisions() {
     },
     onSuccess: async (data) => {
       setError("");
-      setLastDecisionId(data.decision_id);
       await loadAudit(data.decision_id);
+      setRecent((prev) => [
+        {
+          decision_id: data.decision_id,
+          symbol,
+          direction: data.direction,
+          flagged: data.flagged,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ].slice(0, 20));
     },
     onError: (err) => setError(err.message),
   });
@@ -50,85 +66,135 @@ export function Decisions() {
     mutationFn: () => apiFetch("/bootstrap-demo", { method: "POST" }),
     onSuccess: async (data) => {
       setError("");
-      setLastDecisionId(data.decision_id);
       await loadAudit(data.decision_id);
+      setRecent((prev) => [
+        {
+          decision_id: data.decision_id,
+          symbol: "SYNTH",
+          direction: "UNKNOWN",
+          flagged: false,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ].slice(0, 20));
     },
     onError: (err) => setError(err.message),
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Decisions</h1>
-        <p className="mt-1 text-sm dark:text-slate-400 light:text-slate-600">
-          Submit a demo market event or run bootstrap-demo, then inspect the audit chain.
+    <section className="stack">
+      <div className="card">
+        <h3>Decision Studio</h3>
+        <p>
+          Simulate market events, trigger decisions, and inspect the resulting audit chain and
+          direction metadata in one place.
         </p>
       </div>
 
-      <form
-        className="grid gap-4 rounded-lg border dark:border-slate-800 light:border-slate-200 p-4 sm:grid-cols-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          ingest.mutate();
-        }}
-      >
-        <label className="text-sm">
-          Symbol
-          <input
-            className="mt-1 w-full rounded border dark:border-slate-700 light:border-slate-300 dark:bg-slate-900 light:bg-white px-3 py-2"
-            value={symbol}
-            onChange={(e) => setSymbol(e.target.value)}
-          />
-        </label>
-        <label className="text-sm">
-          Price
-          <input
-            className="mt-1 w-full rounded border dark:border-slate-700 light:border-slate-300 dark:bg-slate-900 light:bg-white px-3 py-2"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-          />
-        </label>
-        <label className="text-sm">
-          Volume
-          <input
-            className="mt-1 w-full rounded border dark:border-slate-700 light:border-slate-300 dark:bg-slate-900 light:bg-white px-3 py-2"
-            value={volume}
-            onChange={(e) => setVolume(e.target.value)}
-          />
-        </label>
-        <div className="flex flex-wrap gap-2 sm:col-span-3">
-          <button
-            type="submit"
-            disabled={ingest.isPending}
-            className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500 disabled:opacity-50"
-          >
-            {ingest.isPending ? "Ingesting…" : "Ingest event"}
+      <div className="card">
+        <h3>Ingest Event</h3>
+        <form
+          className="form-grid"
+          onSubmit={(event) => {
+            event.preventDefault();
+            ingest.mutate();
+          }}
+        >
+          <label>
+            Symbol
+            <input value={symbol} onChange={(event) => setSymbol(event.target.value.toUpperCase())} />
+          </label>
+          <label>
+            Price
+            <input value={price} onChange={(event) => setPrice(event.target.value)} />
+          </label>
+          <label>
+            Volume
+            <input value={volume} onChange={(event) => setVolume(event.target.value)} />
+          </label>
+        </form>
+
+        <div className="btn-row">
+          <button type="button" className="btn-primary" onClick={() => ingest.mutate()} disabled={ingest.isPending}>
+            {ingest.isPending ? "Ingesting..." : "Run Ingest"}
           </button>
-          <button
-            type="button"
-            disabled={bootstrap.isPending}
-            onClick={() => bootstrap.mutate()}
-            className="rounded border dark:border-slate-600 light:border-slate-300 px-4 py-2 text-sm dark:hover:bg-slate-800 light:hover:bg-slate-100 disabled:opacity-50"
-          >
-            Bootstrap demo
+          <button type="button" className="btn-secondary" onClick={() => bootstrap.mutate()} disabled={bootstrap.isPending}>
+            {bootstrap.isPending ? "Running..." : "Bootstrap Demo"}
           </button>
         </div>
-      </form>
 
-      {error && <p className="text-sm text-rose-400">{error}</p>}
+        {error && <p className="badge badge--bad">{error}</p>}
+      </div>
 
-      {lastDecisionId && (
-        <div className="rounded-lg border dark:border-slate-800 light:border-slate-200 p-4">
-          <div className="text-sm font-medium">Latest decision</div>
-          <div className="mt-1 font-mono text-xs dark:text-slate-400">{lastDecisionId}</div>
-        </div>
-      )}
+      <div className="page-grid">
+        <article className="card" style={{ gridColumn: "span 5" }}>
+          <h3>Recent Decisions</h3>
+          {recent.length === 0 ? (
+            <div className="empty">No decisions yet. Start with Run Ingest.</div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Decision</th>
+                    <th>Symbol</th>
+                    <th>Direction</th>
+                    <th>Flagged</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((item) => (
+                    <tr key={item.decision_id}>
+                      <td className="mono">{item.decision_id.slice(0, 12)}...</td>
+                      <td>{item.symbol}</td>
+                      <td>{item.direction}</td>
+                      <td>
+                        <span className={item.flagged ? "badge badge--warn" : "badge badge--ok"}>
+                          {item.flagged ? "flag" : "clean"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </article>
 
-      {audit && (
-        <pre className="overflow-x-auto rounded-lg border dark:border-slate-800 light:border-slate-200 dark:bg-slate-900/50 light:bg-slate-100 p-4 text-xs">
-          {JSON.stringify(audit, null, 2)}
-        </pre>
-      )}
-    </div>
+        <article className="card" style={{ gridColumn: "span 7" }}>
+          <h3>Audit Inspector</h3>
+          {!audit ? (
+            <div className="empty">Run an action and the latest audit chain will appear here.</div>
+          ) : (
+            <div className="stack">
+              <p className="mono">decision_id: {audit.decision_id}</p>
+              <p>
+                inferred direction: <span className="badge badge--warn">{direction}</span>
+              </p>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Event Type</th>
+                      <th>Timestamp</th>
+                      <th>Event ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(audit.events || []).map((event) => (
+                      <tr key={event.event_id}>
+                        <td>{event.event_type}</td>
+                        <td className="mono">{event.timestamp}</td>
+                        <td className="mono">{event.event_id.slice(0, 12)}...</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </article>
+      </div>
+    </section>
   );
 }

@@ -1,4 +1,5 @@
 const base = () => (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const apiKey = import.meta.env.VITE_API_KEY || "";
 
 export function apiUrl(path) {
   const p = path.startsWith("/") ? path : `/${path}`;
@@ -8,6 +9,9 @@ export function apiUrl(path) {
 /** @param {string} path @param {RequestInit} [init] */
 export async function apiFetch(path, init = {}) {
   const headers = new Headers(init.headers);
+  if (apiKey && !headers.has("X-API-Key")) {
+    headers.set("X-API-Key", apiKey);
+  }
   if (!headers.has("Content-Type") && init.body) {
     headers.set("Content-Type", "application/json");
   }

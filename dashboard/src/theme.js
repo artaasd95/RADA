@@ -3,7 +3,7 @@ export const THEME_STORAGE_KEY = "rada_theme";
 /** @returns {"dark" | "light"} */
 export function getStoredTheme() {
   const v = localStorage.getItem(THEME_STORAGE_KEY);
-  return v === "light" ? "light" : "dark";
+  return v === "dark" ? "dark" : "light";
 }
 
 /** @param {"dark" | "light"} mode */
@@ -20,7 +20,7 @@ export function initTheme() {
 
 /** @returns {"dark" | "light"} */
 export function cycleTheme() {
-  const next = getStoredTheme() === "dark" ? "light" : "dark";
+  const next = getStoredTheme() === "light" ? "dark" : "light";
   applyTheme(next);
   return next;
 }

@@ -1,62 +1,107 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { Overview } from "./pages/Overview";
-import { Decisions } from "./pages/Decisions";
-import { ReviewQueue } from "./pages/ReviewQueue";
 import { Audit } from "./pages/Audit";
+import { Decisions } from "./pages/Decisions";
+import { Overview } from "./pages/Overview";
+import { ReviewQueue } from "./pages/ReviewQueue";
 import { cycleTheme, getStoredTheme } from "./theme";
 
 const links = [
-  { to: "/", label: "Overview" },
-  { to: "/decisions", label: "Decisions" },
-  { to: "/review", label: "Review Queue" },
-  { to: "/audit", label: "Audit" },
+  { to: "/", label: "Mission Control", short: "Control" },
+  { to: "/decisions", label: "Decision Studio", short: "Decisions" },
+  { to: "/review", label: "Review Desk", short: "Review" },
+  { to: "/audit", label: "Audit Vault", short: "Audit" },
 ];
 
-function Nav({ theme, onToggleTheme }) {
-  const loc = useLocation();
+function StatusDot({ online }) {
   return (
-    <nav className="flex flex-wrap items-center gap-4 border-b dark:border-slate-800 light:border-slate-200 dark:bg-slate-900/80 light:bg-white/90 px-6 py-3 text-sm backdrop-blur-sm">
-      {links.map((l) => (
-        <Link
-          key={l.to}
-          to={l.to}
-          className={
-            loc.pathname === l.to
-              ? "font-semibold text-sky-400"
-              : "dark:text-slate-400 light:text-slate-600 dark:hover:text-slate-200 light:hover:text-slate-900"
-          }
-        >
-          {l.label}
-        </Link>
-      ))}
-      <button
-        type="button"
-        className="ml-auto rounded-md border dark:border-slate-700 light:border-slate-300 px-2 py-1 text-xs dark:text-slate-300 light:text-slate-700"
-        onClick={onToggleTheme}
-      >
-        {theme === "dark" ? "Light mode" : "Dark mode"}
-      </button>
+    <span
+      className={`status-dot ${online ? "status-dot--online" : "status-dot--offline"}`}
+      aria-label={online ? "API online" : "API offline"}
+    />
+  );
+}
+
+function Navigation() {
+  const loc = useLocation();
+
+  return (
+    <nav className="app-nav" aria-label="Primary navigation">
+      {links.map((link) => {
+        const active = loc.pathname === link.to;
+        return (
+          <Link key={link.to} to={link.to} className={active ? "app-nav__item is-active" : "app-nav__item"}>
+            <span className="app-nav__long">{link.label}</span>
+            <span className="app-nav__short">{link.short}</span>
+          </Link>
+        );
+      })}
     </nav>
   );
 }
 
 export default function App() {
   const [theme, setTheme] = useState(() => getStoredTheme());
+  const [onlineHint, setOnlineHint] = useState(true);
+
+  const modeLabel = useMemo(
+    () => (theme === "dark" ? "Switch to day mode" : "Switch to night mode"),
+    [theme],
+  );
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b dark:border-slate-800 light:border-slate-200 px-6 py-4 dark:bg-slate-950/50 light:bg-white/60">
-        <div className="mx-auto flex max-w-6xl items-center gap-3">
-          <img src="/logo.png" alt="RADA" className="h-8 w-8 rounded-md" />
+    <div className="app-root">
+      <div className="bg-orbit bg-orbit--one" />
+      <div className="bg-orbit bg-orbit--two" />
+
+      <header className="app-header">
+        <div className="app-header__brand">
+          <img src="/logo.png" alt="RADA" className="app-logo" />
           <div>
-            <div className="text-lg font-semibold tracking-tight">RADA</div>
-            <div className="text-xs dark:text-slate-500 light:text-slate-500">Risk-Aware Decision Agent</div>
+            <p className="app-kicker">Risk-Aware Decision Agent</p>
+            <h1>Operator Console</h1>
           </div>
         </div>
+
+        <div className="app-header__actions">
+          <button
+            type="button"
+            className="action-btn action-btn--ghost"
+            onClick={() => setTheme(cycleTheme())}
+          >
+            {modeLabel}
+          </button>
+          <button
+            type="button"
+            className="action-btn"
+            onClick={() => setOnlineHint((prev) => !prev)}
+            title="Toggle API hint"
+          >
+            <StatusDot online={onlineHint} />
+            API hint
+          </button>
+        </div>
       </header>
-      <Nav theme={theme} onToggleTheme={() => setTheme(cycleTheme())} />
-      <main className="mx-auto max-w-6xl px-6 py-6">
+
+      <Navigation />
+
+      <section className="app-intro-card">
+        <div>
+          <h2>Runbook Friendly by Design</h2>
+          <p>
+            This dashboard is the complete operator surface for runtime health, manual decision
+            simulation, review actions, and audit export. Use Streamlit for lightweight smoke tests.
+          </p>
+        </div>
+        <ul>
+          <li>Mission Control for live API and KPI checks</li>
+          <li>Decision Studio for ingest and deep decision inspection</li>
+          <li>Review Desk for triage and feedback actions</li>
+          <li>Audit Vault for event retrieval and NDJSON export</li>
+        </ul>
+      </section>
+
+      <main className="app-main">
         <Routes>
           <Route path="/" element={<Overview />} />
           <Route path="/decisions" element={<Decisions />} />

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../api/rest";
 
 export function ReviewQueue() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
+  const [query, setQuery] = useState("");
   const [notes, setNotes] = useState({});
 
   const pending = useQuery({
@@ -15,76 +16,104 @@ export function ReviewQueue() {
   const submit = useMutation({
     mutationFn: (payload) =>
       apiFetch("/feedback/submit", { method: "POST", body: JSON.stringify(payload) }),
-    onSuccess: (_data, variables) => {
+    onSuccess: (_data, vars) => {
       setNotes((prev) => {
         const next = { ...prev };
-        delete next[variables.decision_id];
+        delete next[vars.decision_id];
         return next;
       });
-      qc.invalidateQueries({ queryKey: ["feedback-pending"] });
+      queryClient.invalidateQueries({ queryKey: ["feedback-pending"] });
     },
   });
 
   const items = pending.data?.pending || [];
+  const filtered = useMemo(
+    () => items.filter((item) => item.decision_id.toLowerCase().includes(query.toLowerCase())),
+    [items, query],
+  );
+
+  const send = (item, action) => {
+    submit.mutate({
+      decision_id: item.decision_id,
+      action,
+      note: notes[item.decision_id] || `${action} from React console`,
+      reviewer: "react-dashboard",
+    });
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Review Queue</h1>
-        <p className="mt-1 text-sm dark:text-slate-400 light:text-slate-600">
-          Approve, reject, or annotate flagged decisions.
+    <section className="stack">
+      <div className="card">
+        <h3>Review Desk</h3>
+        <p>
+          Triage flagged decisions, capture reviewer notes, and send explicit APPROVE/REJECT/FLAG
+          actions back to the API.
         </p>
       </div>
 
-      {pending.isLoading && <p className="text-sm dark:text-slate-400">Loading queue…</p>}
-      {pending.isError && <p className="text-sm text-rose-400">{pending.error.message}</p>}
-      {submit.isError && <p className="text-sm text-rose-400">Submit failed: {submit.error.message}</p>}
+      <div className="card">
+        <label>
+          Filter by decision id
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search queue"
+          />
+        </label>
+      </div>
 
-      {items.length === 0 && pending.isSuccess && (
-        <p className="text-sm dark:text-slate-500">No pending reviews.</p>
-      )}
+      {pending.isLoading && <div className="empty">Loading pending queue...</div>}
+      {pending.isError && <div className="empty">Queue unavailable: {pending.error.message}</div>}
+      {submit.isError && <div className="empty">Submit failed: {submit.error.message}</div>}
 
-      <ul className="space-y-4">
-        {items.map((item) => (
-          <li
-            key={item.feedback_id || item.decision_id}
-            className="rounded-lg border dark:border-slate-800 light:border-slate-200 p-4"
-          >
-            <div className="font-mono text-xs dark:text-slate-400">{item.decision_id}</div>
-            <div className="mt-2 text-sm">{item.note || "—"}</div>
-            <label className="mt-3 block text-sm">
-              Review note
-              <input
-                className="mt-1 w-full rounded border dark:border-slate-700 light:border-slate-300 dark:bg-slate-900 light:bg-white px-3 py-2"
-                value={notes[item.decision_id] || ""}
-                onChange={(e) =>
-                  setNotes((prev) => ({ ...prev, [item.decision_id]: e.target.value }))
-                }
-              />
-            </label>
-            <div className="mt-3 flex gap-2">
-              {["APPROVE", "REJECT", "FLAG"].map((action) => (
-                <button
-                  key={action}
-                  type="button"
-                  disabled={submit.isPending}
-                  onClick={() =>
-                    submit.mutate({
-                      decision_id: item.decision_id,
-                      action,
-                      note: notes[item.decision_id] || "",
-                      reviewer: "dashboard",
-                    })
+      {pending.isSuccess && filtered.length === 0 && <div className="empty">No pending items.</div>}
+
+      <div className="stack">
+        {filtered.map((item) => (
+          <article className="card" key={item.feedback_id || item.decision_id}>
+            <div className="stack">
+              <p className="mono">{item.decision_id}</p>
+              <p>{item.note || "No reviewer note yet."}</p>
+              <p className="muted">Action requested: {item.action}</p>
+              <label>
+                Reviewer note
+                <textarea
+                  value={notes[item.decision_id] || ""}
+                  onChange={(event) =>
+                    setNotes((prev) => ({ ...prev, [item.decision_id]: event.target.value }))
                   }
-                  className="rounded border dark:border-slate-600 light:border-slate-300 px-3 py-1 text-xs dark:hover:bg-slate-800 light:hover:bg-slate-100 disabled:opacity-50"
+                />
+              </label>
+              <div className="btn-row">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={submit.isPending}
+                  onClick={() => send(item, "APPROVE")}
                 >
-                  {action}
+                  Approve
                 </button>
-              ))}
+                <button
+                  type="button"
+                  className="btn-danger"
+                  disabled={submit.isPending}
+                  onClick={() => send(item, "REJECT")}
+                >
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={submit.isPending}
+                  onClick={() => send(item, "FLAG")}
+                >
+                  Re-flag
+                </button>
+              </div>
             </div>
-          </li>
+          </article>
         ))}
-      </ul>
-    </div>
+      </div>
+    </section>
   );
 }
