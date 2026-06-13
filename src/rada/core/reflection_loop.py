@@ -39,7 +39,9 @@ class PolicyCheckpoint:
     audit_count: int = 0
     mean_faithfulness: float = 0.0
     last_rationale: str = ""
-    policy_update_signals: deque[str] = field(default_factory=lambda: deque(maxlen=_MAX_SCORE_HISTORY))
+    policy_update_signals: deque[str] = field(
+        default_factory=lambda: deque(maxlen=_MAX_SCORE_HISTORY)
+    )
 
 
 @dataclass(slots=True)
@@ -77,7 +79,9 @@ class ReflectionPolicyUpdater:
     async def apply(self, decision: Decision, audit_trace: DecisionTrace) -> PolicyCheckpoint:
         score = audit_trace.faithfulness_score or 0.0
         n = self.checkpoint.audit_count
-        self.checkpoint.mean_faithfulness = (self.checkpoint.mean_faithfulness * n + score) / (n + 1)
+        self.checkpoint.mean_faithfulness = (
+            (self.checkpoint.mean_faithfulness * n + score) / (n + 1)
+        )
         self.checkpoint.audit_count += 1
         self.checkpoint.version += 1
         self.checkpoint.last_rationale = audit_trace.rationale

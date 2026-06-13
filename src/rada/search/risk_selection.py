@@ -5,8 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from rada.schemas import ActionDirection, ProposedAction
-
-
 from rada.search.constants import DEFAULT_CAPITAL_NOTIONAL
 
 

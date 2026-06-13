@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 
 from rada.core.decision_loop import HoldPolicy
 from rada.policies.registry import RiskGatedPolicy, load_profile
 from rada.schemas import ActionDirection, DecisionTrace, MarketEvent, ProposedAction
-from datetime import UTC, datetime
 
 
 class HighCvarPolicy(HoldPolicy):
@@ -19,7 +20,12 @@ class HighCvarPolicy(HoldPolicy):
 async def test_conservative_profile_breaches_to_hold() -> None:
     profile = load_profile("conservative")
     gated = RiskGatedPolicy(HighCvarPolicy(), profile)
-    event = MarketEvent(symbol="BTC", price=100.0, volume=1.0, timestamp=datetime(2026, 6, 1, tzinfo=UTC))
+    event = MarketEvent(
+        symbol="BTC",
+        price=100.0,
+        volume=1.0,
+        timestamp=datetime(2026, 6, 1, tzinfo=UTC),
+    )
     action = await gated.propose(event, DecisionTrace(model_name="t", rationale="r"))
     assert action.direction == ActionDirection.HOLD
 
@@ -29,7 +35,12 @@ async def test_conservative_profile_breaches_to_hold() -> None:
 async def test_aggressive_profile_allows_higher_cvar() -> None:
     profile = load_profile("aggressive")
     gated = RiskGatedPolicy(HighCvarPolicy(), profile)
-    event = MarketEvent(symbol="BTC", price=100.0, volume=1.0, timestamp=datetime(2026, 6, 1, tzinfo=UTC))
+    event = MarketEvent(
+        symbol="BTC",
+        price=100.0,
+        volume=1.0,
+        timestamp=datetime(2026, 6, 1, tzinfo=UTC),
+    )
     action = await gated.propose(event, DecisionTrace(model_name="t", rationale="r"))
     assert action.direction == ActionDirection.BUY
 

@@ -5,6 +5,7 @@ Technical documentation for operators, developers, and contributors building on 
 ## Start Here
 
 - New to the project: [Repository README](../README.md)
+- Product positioning: [Why RADA?](why-rada.md)
 - System orientation: [Architecture overview](architecture-overview.md)
 - Day-2 operations: [Production runbook](runbook-production.md)
 
@@ -19,6 +20,7 @@ Technical documentation for operators, developers, and contributors building on 
 
 ### Backend and Platform Engineers
 
+- [Why RADA?](why-rada.md)
 - [Architecture](architecture.md)
 - [Architecture overview](architecture-overview.md)
 - [Data platform](data-platform.md)
@@ -43,10 +45,11 @@ Technical documentation for operators, developers, and contributors building on 
 
 ### Path A: Understand the Runtime in 15 Minutes
 
-1. [Architecture overview](architecture-overview.md)
-2. [Calc engine](calc.md)
-3. [Audit trail](audit.md)
-4. [Monitoring](monitoring.md)
+1. [Why RADA?](why-rada.md)
+2. [Architecture overview](architecture-overview.md)
+3. [Calc engine](calc.md)
+4. [Audit trail](audit.md)
+5. [Monitoring](monitoring.md)
 
 ### Path B: Operate RADA in Production
 

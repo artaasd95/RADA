@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
 import pytest
 
 from rada.adapters.scenario_reasoner import ScenarioReasoner
@@ -9,7 +7,6 @@ from rada.core.decision_loop import DecisionLoop, PassThroughRiskOptimizer
 from rada.core.reasoner_loop import ReasonerLoop
 from rada.data.storage import InMemoryDecisionStore
 from rada.policies.registry import RiskGatedPolicy, load_profile
-from rada.schemas import MarketEvent
 from rada.search.simulation import ShockScenario, generate_shock_scenario
 
 

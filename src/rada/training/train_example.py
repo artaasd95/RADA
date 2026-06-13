@@ -10,12 +10,12 @@ This example demonstrates:
 4. Proper cleanup and error handling
 """
 
-import os
 import json
 import logging
-from pathlib import Path
+import os
 from datetime import datetime
-from typing import Dict, Any
+from pathlib import Path
+from typing import Any
 
 # Setup logging
 logging.basicConfig(
@@ -124,7 +124,10 @@ class RADATrainer:
             
             # Log epoch summary
             with open(self.logs_dir / "training.log", "a") as f:
-                f.write(f"[Epoch {epoch}] loss={metrics['loss']:.4f} acc={metrics['accuracy']:.4f}\n")
+                f.write(
+                    f"[Epoch {epoch}] loss={metrics['loss']:.4f} "
+                    f"acc={metrics['accuracy']:.4f}\n"
+                )
         
         logger.info("Training complete")
         
@@ -152,7 +155,7 @@ class RADATrainer:
         with open(path, "w") as f:
             json.dump(checkpoint_data, f)
     
-    def _compute_metrics(self, epoch: int, total_epochs: int) -> Dict[str, Any]:
+    def _compute_metrics(self, epoch: int, total_epochs: int) -> dict[str, Any]:
         """Compute training metrics.
         
         In production, this would compute real metrics from training.
@@ -171,7 +174,7 @@ class RADATrainer:
             "batch_size": 32,
         }
     
-    def _generate_report(self, num_epochs: int) -> Dict[str, Any]:
+    def _generate_report(self, num_epochs: int) -> dict[str, Any]:
         """Generate final training report."""
         return {
             "training_complete": True,
@@ -201,7 +204,7 @@ def main():
         
         logger.info(f"Training complete! Results in: {run_dir}")
         logger.info("S3 uploader daemon will automatically upload results")
-        logger.info(f"Monitor: tail -f storage/logs/s3_uploader.log")
+        logger.info("Monitor: tail -f storage/logs/s3_uploader.log")
         
         return 0
     

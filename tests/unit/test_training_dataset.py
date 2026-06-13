@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from rada.data.cards.feedback_record import FeedbackRecord, FeedbackLabels, FeedbackProvenance
+from rada.data.cards.feedback_record import FeedbackLabels, FeedbackProvenance, FeedbackRecord
 from rada.training.dataset import load_training_dataset
 
 

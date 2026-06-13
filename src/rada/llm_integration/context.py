@@ -76,7 +76,7 @@ def estimate_tokens(text: str, *, model_id: str = "gpt-4") -> int:
         except KeyError:
             enc = tiktoken.get_encoding("cl100k_base")
         return len(enc.encode(text))
-    except ImportError:
+    except Exception:
         return max(1, int(len(text) / CHARS_PER_TOKEN_HEURISTIC * HEURISTIC_SAFETY_MARGIN))
 
 
@@ -139,11 +139,17 @@ def resolve_model_limits(
             reserve_output = int(extra["reserve_output_tokens"])
         if "max_context_tokens" in extra:
             cap = int(extra["max_context_tokens"])
-            max_context_override = cap if max_context_override is None else min(max_context_override, cap)
+            max_context_override = (
+                cap if max_context_override is None else min(max_context_override, cap)
+            )
 
     env_cap = max_context_from_env()
     if env_cap is not None:
-        max_context_override = env_cap if max_context_override is None else min(max_context_override, env_cap)
+        max_context_override = (
+            env_cap
+            if max_context_override is None
+            else min(max_context_override, env_cap)
+        )
 
     if max_context_override is not None:
         context_window = min(context_window, max_context_override)

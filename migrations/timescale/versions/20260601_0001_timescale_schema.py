@@ -76,16 +76,24 @@ def upgrade() -> None:
         """
     )
 
-    op.execute("CREATE INDEX IF NOT EXISTS idx_market_events_symbol_ts ON market_events(symbol, ts DESC)")
     op.execute(
-        "CREATE INDEX IF NOT EXISTS idx_decision_traces_model_ts ON decision_traces(model_name, ts DESC)"
+        "CREATE INDEX IF NOT EXISTS idx_market_events_symbol_ts "
+        "ON market_events(symbol, ts DESC)"
+    )
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS idx_decision_traces_model_ts "
+        "ON decision_traces(model_name, ts DESC)"
     )
 
     op.execute(
-        "SELECT create_hypertable('market_events', 'ts', if_not_exists => TRUE, migrate_data => TRUE)"
+        "SELECT create_hypertable("
+        "'market_events', 'ts', if_not_exists => TRUE, migrate_data => TRUE"
+        ")"
     )
     op.execute(
-        "SELECT create_hypertable('decision_traces', 'ts', if_not_exists => TRUE, migrate_data => TRUE)"
+        "SELECT create_hypertable("
+        "'decision_traces', 'ts', if_not_exists => TRUE, migrate_data => TRUE"
+        ")"
     )
 
 

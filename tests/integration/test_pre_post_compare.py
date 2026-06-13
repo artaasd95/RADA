@@ -16,7 +16,10 @@ FIXTURES = REPO_ROOT / "benchmarks" / "training" / "toy_feedback.jsonl"
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_pre_post_compare_emits_delta(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_pre_post_compare_emits_delta(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("RADA_ADAPTER_STORE_ROOT", str(tmp_path / "adapters"))
 
     report = await run_pre_post_compare(

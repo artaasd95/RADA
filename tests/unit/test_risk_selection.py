@@ -13,7 +13,11 @@ def test_selects_largest_feasible_action() -> None:
         ProposedAction(direction=ActionDirection.BUY, size=100.0),
         ProposedAction(direction=ActionDirection.SELL, size=50.0),
     ]
-    chosen = select_cvar_feasible_action(candidates, price=50000.0, tailwarp=TailWarpStub(cvar_limit=1.0))
+    chosen = select_cvar_feasible_action(
+        candidates,
+        price=50000.0,
+        tailwarp=TailWarpStub(cvar_limit=1.0),
+    )
     assert chosen.size == 100.0
 
 

@@ -35,7 +35,11 @@ def parse_args() -> argparse.Namespace:
         help="Training data source",
     )
     parser.add_argument("--data", type=Path, default=None, help="Path to export JSONL")
-    parser.add_argument("--distilled-name", default=None, help="Distilled corpus name under data/distilled/")
+    parser.add_argument(
+        "--distilled-name",
+        default=None,
+        help="Distilled corpus name under data/distilled/",
+    )
     parser.add_argument(
         "--distilled-root",
         type=Path,

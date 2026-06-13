@@ -22,9 +22,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fixtures", type=Path, required=True)
     parser.add_argument("--adapter", type=Path, default=None, help="Existing adapter dir")
     parser.add_argument("--output", type=Path, default=None)
-    parser.add_argument("--methods", default="reflection", help="Comma-separated: policy,reflection")
+    parser.add_argument(
+        "--methods",
+        default="reflection",
+        help="Comma-separated: policy,reflection",
+    )
     parser.add_argument("--output-run-id", default="pre-post-smoke")
-    parser.add_argument("--no-train", action="store_true", help="Skip mini-train; use --adapter only")
+    parser.add_argument(
+        "--no-train",
+        action="store_true",
+        help="Skip mini-train; use --adapter only",
+    )
     return parser.parse_args()
 
 

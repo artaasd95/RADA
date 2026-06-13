@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -39,7 +39,7 @@ def upload_tree(local_root: Path, *, dry_run: bool = True) -> list[str]:
 
     uploaded: list[str] = []
     manifest = {
-        "synced_at": datetime.now(timezone.utc).isoformat(),
+        "synced_at": datetime.now(UTC).isoformat(),
         "local_root": str(local_root.resolve()),
         "bucket": cfg["bucket"],
         "prefix": cfg["prefix"],
@@ -72,7 +72,12 @@ def upload_tree(local_root: Path, *, dry_run: bool = True) -> list[str]:
     return uploaded
 
 
-def download_tree(local_root: Path, *, keys: list[str] | None = None, dry_run: bool = True) -> list[str]:
+def download_tree(
+    local_root: Path,
+    *,
+    keys: list[str] | None = None,
+    dry_run: bool = True,
+) -> list[str]:
     """Download objects from bucket into local_root."""
     cfg = bucket_config()
     if not cfg["bucket"]:
@@ -110,7 +115,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Bucket-native artifact sync")
     parser.add_argument("direction", choices=["upload", "download"])
     parser.add_argument("path", type=Path, default=Path("experiments"), nargs="?")
-    parser.add_argument("--execute", action="store_true", help="Perform real transfer (default: dry-run)")
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="Perform real transfer (default: dry-run)",
+    )
     args = parser.parse_args()
     dry_run = not args.execute
     if args.direction == "upload":

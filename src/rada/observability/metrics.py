@@ -45,7 +45,10 @@ class MetricsRegistry:
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
-            return {"counters": dict(self._counters), "histograms": {k: len(v) for k, v in self._histograms.items()}}
+            return {
+                "counters": dict(self._counters),
+                "histograms": {k: len(v) for k, v in self._histograms.items()},
+            }
 
 
 _registry: MetricsRegistry | None = None

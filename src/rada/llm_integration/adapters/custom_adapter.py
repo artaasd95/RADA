@@ -5,13 +5,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
 from rada.llm_integration.adapters._http_base import OpenAICompatibleAdapter
 from rada.llm_integration.adapters.litellm_adapter import LiteLLMAdapter
 from rada.llm_integration.adapters.mock_adapter import MockLLMAdapter
 from rada.llm_integration.base import Completion
 from rada.llm_integration.config import LLMConfig
+
+logger = logging.getLogger(__name__)
 
 
 class CustomAdapter(OpenAICompatibleAdapter):

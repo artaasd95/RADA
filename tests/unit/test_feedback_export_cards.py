@@ -4,10 +4,9 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-
-from rada.core.decision_loop import DecisionLoop, HoldPolicy, NoOpReasoner, PassThroughRiskOptimizer
 from pydantic import ValidationError
 
+from rada.core.decision_loop import DecisionLoop, HoldPolicy, NoOpReasoner, PassThroughRiskOptimizer
 from rada.data.cards import DecisionExportRow, FeedbackLabels, FeedbackRecord
 from rada.data.storage import InMemoryDecisionStore
 from rada.schemas import MarketEvent

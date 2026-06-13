@@ -12,11 +12,11 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_ROOT / "src"))
 
-from rada.core.decision_loop import PassThroughRiskOptimizer
-from rada.core.search_loop import SearchLoop
-from rada.schemas import ActionDirection, DecisionTrace, MarketEvent, ProposedAction
-from rada.search.eval import evaluate_cases, load_fixture_set
-from rada.search.simulation import ShockScenario, generate_shock_scenario
+from rada.core.decision_loop import PassThroughRiskOptimizer  # noqa: E402
+from rada.core.search_loop import SearchLoop  # noqa: E402
+from rada.schemas import ActionDirection, DecisionTrace, ProposedAction  # noqa: E402
+from rada.search.eval import evaluate_cases, load_fixture_set  # noqa: E402
+from rada.search.simulation import ShockScenario, generate_shock_scenario  # noqa: E402
 
 
 async def main() -> None:

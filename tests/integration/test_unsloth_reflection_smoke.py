@@ -21,7 +21,10 @@ FIXTURES = REPO_ROOT / "benchmarks" / "training" / "toy_feedback.jsonl"
 
 
 @pytest.mark.integration
-def test_reflection_train_stub_produces_adapter(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reflection_train_stub_produces_adapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     adapter_root = tmp_path / "adapters"
     monkeypatch.setenv("RADA_ADAPTER_STORE_ROOT", str(adapter_root))
 

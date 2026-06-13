@@ -6,7 +6,7 @@ import argparse
 import ftplib
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DEFAULT_UPLOAD_DIRS = [
@@ -26,7 +26,7 @@ def _repo_name() -> str:
 
 
 def _remote_date_prefix(remote_root: str, repo: str) -> str:
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
     return f"{remote_root.rstrip('/')}/{repo}/{date}"
 
 
@@ -176,7 +176,12 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(description="Sync local dirs to FTP/SFTP storage.")
     parser.add_argument("--local-root", default=".", help="Repository root")
-    parser.add_argument("--check-threshold", type=float, default=None, help="Skip sync below threshold")
+    parser.add_argument(
+        "--check-threshold",
+        type=float,
+        default=None,
+        help="Skip sync below threshold",
+    )
     parser.add_argument("--protocol", choices=("ftp", "sftp"), default="ftp")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)

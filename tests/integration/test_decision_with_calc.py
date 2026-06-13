@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
+from rada.adapters.scenario_reasoner import ScenarioReasoner
 from rada.core.decision_loop import DecisionLoop, HoldPolicy, PassThroughRiskOptimizer
 from rada.core.reasoner_loop import ReasonerLoop
-from rada.adapters.scenario_reasoner import ScenarioReasoner
 from rada.data.storage import InMemoryDecisionStore
 from rada.search.simulation import ShockScenario, generate_shock_scenario
 

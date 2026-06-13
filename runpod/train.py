@@ -141,7 +141,8 @@ def main() -> int:
     signal.signal(signal.SIGINT, _handle_signal)
 
     with log_path.open("a", encoding="utf-8") as log_file:
-        log_file.write(f"\n--- runpod start {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} ---\n")
+        started_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        log_file.write(f"\n--- runpod start {started_at} ---\n")
         tee = _Tee(sys.stdout, log_file)
         proc = subprocess.Popen(
             cmd,

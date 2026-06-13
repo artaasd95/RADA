@@ -14,7 +14,12 @@ def _decision(
     verified_context: dict | None = None,
     cvar_impact: float | None = None,
 ) -> Decision:
-    event = MarketEvent(symbol="BTC", price=100.0, volume=1.0, timestamp=datetime(2026, 6, 1, tzinfo=UTC))
+    event = MarketEvent(
+        symbol="BTC",
+        price=100.0,
+        volume=1.0,
+        timestamp=datetime(2026, 6, 1, tzinfo=UTC),
+    )
     trace = DecisionTrace(
         model_name="t",
         rationale="r",

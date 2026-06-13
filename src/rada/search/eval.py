@@ -84,7 +84,11 @@ def evaluate_cases(cases: list[SearchEvalCase]) -> SearchEvalReport:
         tail_loss = tailwarp.estimate_tail_loss(chosen, price=case.price)
         breaches.append(1.0 if tail_loss > tailwarp.cvar_limit else 0.0)
 
-        match = 1.0 if chosen.direction.value == case.optimal_direction else case.faithfulness_target
+        match = (
+            1.0
+            if chosen.direction.value == case.optimal_direction
+            else case.faithfulness_target
+        )
         faithfulness.append(match)
 
     n = max(len(cases), 1)

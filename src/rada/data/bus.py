@@ -25,8 +25,10 @@ class BaseEventBus(ABC):
     async def dequeue(self) -> MarketEvent:
         """Block until one market event is available."""
 
+    @abstractmethod
     async def close(self) -> None:
         """Release backend resources when supported."""
+        raise NotImplementedError
 
 
 class InMemoryEventBus(BaseEventBus):

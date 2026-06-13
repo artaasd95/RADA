@@ -40,8 +40,19 @@ It is built for systems where **traceability, safety constraints, and operator c
 - **Full audit timeline:** each decision can be replayed through `/audit/decision/{decision_id}` or exported with `/audit/export`.
 - **Human review queue:** auto-flagged decisions can be approved/rejected through Streamlit and API workflows.
 - **Production-ready operations:** Docker Compose stack, health checks, metrics endpoint, and deploy check script.
-- **Model portability:** safe defaults with mock adapters, plus BYOK providers for self-hosted or cloud inference.
+- **Model portability:** local Qwen by default, plus BYOK providers for OpenAI-compatible cloud or self-hosted inference.
 - **Separated hot path and learning path:** reflection/export/training are asynchronous and do not block ingest.
+
+## Why RADA?
+
+RADA is for teams that need a decision system, not just a model call. It is optimized for traceability, operator review, and explicit risk control around every output.
+
+It intentionally serves two roles:
+
+- **Core library:** reusable Python components for loops, risk gates, reasoners, audit trails, and storage.
+- **Standalone showcase:** a complete FastAPI service, dashboards, configs, and scripts that demonstrate how those components run end to end.
+
+If you want to embed RADA into a larger platform, extend `src/rada/`. If you want a working reference stack, run this repository as-is and treat it as the showcase deployment.
 
 ## Why Teams Choose RADA
 
@@ -73,8 +84,15 @@ It is built for systems where **traceability, safety constraints, and operator c
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
+ollama pull qwen2.5:0.5b
 uvicorn rada.main:app --reload
 ```
+
+Runtime default:
+
+- local-first real reasoner via Ollama and `qwen2.5:0.5b`
+- BYOK fallback via `configs/llm_cloud.yaml` when `OPENAI_API_KEY` is set
+- mock reasoner only for tests and explicit mock mode
 
 Then send one event:
 
@@ -128,6 +146,7 @@ python -m venv .venv
 # source .venv/bin/activate
 
 pip install -e ".[dev]"
+ollama pull qwen2.5:0.5b
 uvicorn rada.main:app --reload
 ```
 
@@ -197,6 +216,17 @@ streamlit run apps/streamlit/dashboard.py
 
 Set `RADA_API_URL` (and `RADA_API_KEY` if auth is enabled).
 
+## UI Improvement Plan
+
+The current UI is intentionally lightweight and does not require auth. The next iteration should focus on operator experience rather than identity plumbing.
+
+1. Add a richer decision detail page that combines rationale, audit events, verified context, and review status.
+2. Improve review queue filtering by symbol, confidence, risk state, and age.
+3. Add trend charts for ingest volume, auto-flag rate, risk-gate rejections, and review backlog.
+4. Make the audit timeline easier to scan with grouped event cards and delta-oriented visual cues.
+5. Upgrade the React dashboard visual language so it reads like an operations console, not a scaffold.
+6. Keep both dashboards auth-free for trusted internal environments until there is a separate access-control requirement.
+
 ## Visual Preview
 
 RADA ships branding assets in `assets/`:
@@ -231,9 +261,9 @@ These are ready for GitHub social previews, release notes, and docs pages.
 | `RADA_SQLITE_URL` | `sqlite:///./rada.db` | SQLite DSN for local/dev. |
 | `RADA_DATABASE_URL` | _empty_ | Required when `RADA_DATA_STORE_MODE=timescale`. |
 | `RADA_EVENT_BUS_MODE` | `inmemory` | Event bus strategy (`inmemory`/`redis` by deployment). |
-| `RADA_REASONER_MODE` | `mock` | Runtime reasoner mode (mock/scenario/noop fallback). |
+| `RADA_REASONER_MODE` | `real` | Runtime reasoner mode (`real`, `mock`, `scenario`, `noop`). |
 | `RADA_API_KEY` | _empty_ | API key for protected endpoints. |
-| `RADA_LLM_CONFIG_PATH` | `configs/llm_mock.yaml` | BYOK provider config path. |
+| `RADA_LLM_CONFIG_PATH` | `configs/llm_ollama.yaml` | Primary runtime LLM config path. |
 | `RADA_OTEL_ENABLED` | `false` | Enables optional observability hooks. |
 | `RADA_API_URL` | `http://localhost:8000` | Streamlit API target. |
 
@@ -281,6 +311,7 @@ python scripts/compare_pre_post_train.py --model-id qwen3-0.6b --fixtures benchm
 
 ## Documentation
 
+- [Why RADA?](docs/why-rada.md)
 - [Documentation index](docs/index.md)
 - [Architecture overview](docs/architecture-overview.md)
 - [Production runbook](docs/runbook-production.md)

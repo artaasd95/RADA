@@ -39,3 +39,10 @@ Requires **Python 3.11+**.
 2. Link vault task ID if applicable (e.g. `IMP-LLM-01-07`).
 3. Ensure `ruff check` and unit tests pass.
 4. Include API or behavior changes in `README.md` and/or `docs/` when relevant.
+
+## Contributor License Agreement
+
+Pull requests are appreciated. Before a PR can be merged, contributors must complete the CLA flow triggered by the `cla-assistant` bot.
+
+- CLA service: `https://cla-assistant.io`
+- Expect the bot to appear as a required check on the PR when contribution terms need to be accepted.

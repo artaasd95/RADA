@@ -11,7 +11,7 @@ from pathlib import Path
 _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO / "src"))
 
-from rada.search.eval import evaluate_cases, load_fixture_set
+from rada.search.eval import evaluate_cases, load_fixture_set  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:

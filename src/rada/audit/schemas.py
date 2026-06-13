@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 
-class AuditEventType(str, Enum):
+class AuditEventType(StrEnum):
     DECISION = "DECISION"
     CALC = "CALC"
     LLM_CALL = "LLM_CALL"

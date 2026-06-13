@@ -27,8 +27,8 @@ import subprocess
 import tempfile
 import time
 import uuid
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -80,13 +80,13 @@ class S3Uploader:
         
         # Unique remote name for this uploader instance
         self.remote_name = f"rada-{uuid.uuid4().hex[:8]}"
-        self.s3cmd_config_path: Optional[Path] = None
+        self.s3cmd_config_path: Path | None = None
         
         # State file to track uploaded files
         logs_dir = self.project_root / "storage" / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
         self.state_file = logs_dir / "s3_uploader_state.json"
-        self.state: Dict[str, Dict[str, float]] = self._load_state()
+        self.state: dict[str, dict[str, float]] = self._load_state()
         
         # Setup logging
         log_file = logs_dir / "s3_uploader.log"
@@ -97,7 +97,7 @@ class S3Uploader:
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
     
-    def _load_state(self) -> Dict[str, Dict[str, float]]:
+    def _load_state(self) -> dict[str, dict[str, float]]:
         """Load upload state from file."""
         if self.state_file.exists():
             try:
@@ -114,7 +114,7 @@ class S3Uploader:
         except Exception as e:
             logger.error(f"Failed to save state file: {e}")
     
-    def _run_s3cmd(self, args: List[str]) -> None:
+    def _run_s3cmd(self, args: list[str]) -> None:
         """Execute s3cmd command."""
         if not shutil.which("s3cmd"):
             raise RuntimeError("s3cmd is not installed. Install: pip install s3cmd")
@@ -127,7 +127,12 @@ class S3Uploader:
     
     def setup_s3cmd(self) -> None:
         """Configure s3cmd with credentials."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".s3cmd", delete=False, encoding="utf-8") as tmp:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".s3cmd",
+            delete=False,
+            encoding="utf-8",
+        ) as tmp:
             self.s3cmd_config_path = Path(tmp.name)
             
             host_base = self.endpoint.replace("https://", "").replace("http://", "")
@@ -185,7 +190,7 @@ signature_v2 = false
                 if p.is_file():
                     yield p
     
-    def _file_signature(self, path: Path) -> Tuple[float, int]:
+    def _file_signature(self, path: Path) -> tuple[float, int]:
         """Get file mtime and size for change detection."""
         try:
             stat = path.stat()
@@ -235,7 +240,7 @@ signature_v2 = false
         
         return True
     
-    def _compress_file(self, source: Path) -> Tuple[Path, bool]:
+    def _compress_file(self, source: Path) -> tuple[Path, bool]:
         """Compress file with gzip if appropriate."""
         if not self._should_compress(source):
             return source, False
@@ -293,7 +298,7 @@ signature_v2 = false
         
         return f"s3://{self.bucket}/{self.project_prefix}/{str(remote_rel).replace(os.sep, '/')}"
     
-    def upload_once(self) -> Dict[str, int]:
+    def upload_once(self) -> dict[str, int]:
         """Single upload pass - upload all new/changed files."""
         if not self.s3cmd_config_path:
             raise RuntimeError("s3cmd not configured. Call setup_s3cmd() first.")
@@ -308,7 +313,7 @@ signature_v2 = false
                 skipped += 1
                 continue
             
-            temp_path: Optional[Path] = None
+            temp_path: Path | None = None
             try:
                 upload_source, was_compressed = self._compress_file(path)
                 if was_compressed:

@@ -4,32 +4,33 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request, Response
 
-logger = logging.getLogger(__name__)
-
+from rada.adapters.real_reasoner import RealReasoner
+from rada.adapters.scenario_reasoner import ScenarioReasoner
 from rada.audit.api import router as audit_router
 from rada.audit.store import AuditStore
 from rada.audit.writer import AuditWriter
-from rada.adapters.scenario_reasoner import ScenarioReasoner
 from rada.core.decision_loop import (
     DecisionLoop,
     HoldPolicy,
     NoOpReasoner,
     PassThroughRiskOptimizer,
 )
-from rada.core.search_loop import SearchLoop
-from rada.feedback.auto_flag import build_flag_feedback, should_auto_flag
 from rada.core.reasoner_loop import ReasonerLoop
 from rada.core.reflection_loop import ReflectionLoop
+from rada.core.search_loop import SearchLoop
 from rada.data.bus import build_event_bus
 from rada.data.ingestion import synthetic_market_events
 from rada.data.storage import InMemoryDecisionStore, SQLiteDecisionStore
 from rada.data.timescale_store import TimescaleDecisionStore
 from rada.feedback.api import router as feedback_router
+from rada.feedback.auto_flag import build_flag_feedback, should_auto_flag
 from rada.feedback.store import FeedbackStore
 from rada.interfaces import BaseDataStore
 from rada.observability.metrics import get_metrics
@@ -41,17 +42,39 @@ from rada.utils.metrics import (
     render_prometheus_text,
 )
 
+logger = logging.getLogger(__name__)
+
+
+def _default_reasoner_mode() -> str:
+    if os.getenv("RADA_REASONER_MODE"):
+        return os.environ["RADA_REASONER_MODE"]
+    if "pytest" in sys.modules:
+        return "mock"
+    return "real"
+
 
 @dataclass(slots=True)
 class RuntimeSettings:
-    event_bus_mode: str = os.getenv("RADA_EVENT_BUS_MODE", "inmemory")
-    data_store_mode: str = os.getenv("RADA_DATA_STORE_MODE", "sqlite")
-    database_url: str = os.getenv("RADA_DATABASE_URL", "")
-    sqlite_url: str = os.getenv("RADA_SQLITE_URL", "sqlite:///./rada.db")
-    audit_db_path: str = os.getenv("RADA_AUDIT_DB_PATH", "./rada_audit.db")
-    feedback_db_path: str = os.getenv("RADA_FEEDBACK_DB_PATH", "./rada_feedback.db")
-    reasoner_mode: str = os.getenv("RADA_REASONER_MODE", "mock")
-    llm_config_path: str = os.getenv("RADA_LLM_CONFIG_PATH", "configs/llm_mock.yaml")
+    event_bus_mode: str = field(
+        default_factory=lambda: os.getenv("RADA_EVENT_BUS_MODE", "inmemory")
+    )
+    data_store_mode: str = field(
+        default_factory=lambda: os.getenv("RADA_DATA_STORE_MODE", "sqlite")
+    )
+    database_url: str = field(default_factory=lambda: os.getenv("RADA_DATABASE_URL", ""))
+    sqlite_url: str = field(
+        default_factory=lambda: os.getenv("RADA_SQLITE_URL", "sqlite:///./rada.db")
+    )
+    audit_db_path: str = field(
+        default_factory=lambda: os.getenv("RADA_AUDIT_DB_PATH", "./rada_audit.db")
+    )
+    feedback_db_path: str = field(
+        default_factory=lambda: os.getenv("RADA_FEEDBACK_DB_PATH", "./rada_feedback.db")
+    )
+    reasoner_mode: str = field(default_factory=_default_reasoner_mode)
+    llm_config_path: str = field(
+        default_factory=lambda: os.getenv("RADA_LLM_CONFIG_PATH", "configs/llm_ollama.yaml")
+    )
 
 
 def build_data_store(settings: RuntimeSettings) -> BaseDataStore:
@@ -73,20 +96,31 @@ def build_reasoner(settings: RuntimeSettings):
     mode = settings.reasoner_mode.lower().strip()
     if mode in {"mock", "scenario"}:
         return ScenarioReasoner()
-    if mode not in {"", "noop"}:
-        logger.warning("Unknown RADA_REASONER_MODE=%r, using NoOpReasoner", mode)
-    return NoOpReasoner()
+    if mode == "noop":
+        return NoOpReasoner()
+
+    primary_path = Path(settings.llm_config_path)
+    if not primary_path.exists():
+        logger.warning("Missing RADA_LLM_CONFIG_PATH=%s, using local Ollama default", primary_path)
+        primary_path = Path("configs/llm_ollama.yaml")
+
+    fallback_path = Path("configs/llm_cloud.yaml")
+    if mode not in {"", "real", "llm", "local", "byok", "auto"}:
+        logger.warning("Unknown RADA_REASONER_MODE=%r, using real reasoner", mode)
+
+    return RealReasoner.from_config_paths(
+        primary_path,
+        fallback_path if fallback_path.exists() and fallback_path != primary_path else None,
+    )
 
 
 def build_llm_provider(settings: RuntimeSettings):
     """Optional BYOK LLM provider for runtime inference (mock default)."""
-    from pathlib import Path
-
     from rada.llm_integration.factory import create_llm_provider
 
     path = Path(settings.llm_config_path)
     if not path.exists():
-        path = Path("configs/llm_mock.yaml")
+        path = Path("configs/llm_ollama.yaml")
     return create_llm_provider(path)
 
 

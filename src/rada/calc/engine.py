@@ -51,7 +51,14 @@ def compute_cvar(returns: list[float], *, alpha: float = 0.05) -> CalcResult:
         )
     cvar = float(-np.mean(tail))
     conf = CalcConfidence.HIGH if len(returns) >= 20 else CalcConfidence.MEDIUM
-    return _result("cvar", cvar, "fraction", conf, "historical_cvar", {"alpha": alpha, "n": len(returns)})
+    return _result(
+        "cvar",
+        cvar,
+        "fraction",
+        conf,
+        "historical_cvar",
+        {"alpha": alpha, "n": len(returns)},
+    )
 
 
 def compute_position_size(
@@ -84,4 +91,11 @@ def compute_drawdown(equity_curve: list[float]) -> CalcResult:
     drawdowns = (running_max - arr) / np.where(running_max == 0, 1.0, running_max)
     max_dd = float(np.max(drawdowns))
     conf = CalcConfidence.HIGH if len(equity_curve) >= 10 else CalcConfidence.MEDIUM
-    return _result("drawdown", max_dd, "fraction", conf, "running_max_drawdown", {"n": len(equity_curve)})
+    return _result(
+        "drawdown",
+        max_dd,
+        "fraction",
+        conf,
+        "running_max_drawdown",
+        {"n": len(equity_curve)},
+    )

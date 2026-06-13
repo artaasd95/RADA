@@ -142,7 +142,10 @@ class DecisionLoop:
 
             with tracer.start_span("risk_gate", cvar_value=cvar_value) as gate_span:
                 optimized = await self._risk_optimizer.optimize(proposed, trace)
-                if optimized.direction == ActionDirection.HOLD and proposed.direction != ActionDirection.HOLD:
+                if (
+                    optimized.direction == ActionDirection.HOLD
+                    and proposed.direction != ActionDirection.HOLD
+                ):
                     metrics.inc("rada_risk_gate_rejections_total")
                     gate_span.set_attribute("rejected", True)
 

@@ -61,7 +61,15 @@ class AuditStore:
                 conn.execute(
                     """
                     INSERT INTO audit_events
-                    (event_id, decision_id, event_type, timestamp, payload_before, payload_after, metadata)
+                    (
+                        event_id,
+                        decision_id,
+                        event_type,
+                        timestamp,
+                        payload_before,
+                        payload_after,
+                        metadata
+                    )
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
@@ -84,7 +92,8 @@ class AuditStore:
         def _run() -> list[AuditEvent]:
             with sqlite3.connect(self._db_path) as conn:
                 rows = conn.execute(
-                    "SELECT event_id, decision_id, event_type, timestamp, payload_before, payload_after, metadata "
+                    "SELECT event_id, decision_id, event_type, timestamp, "
+                    "payload_before, payload_after, metadata "
                     "FROM audit_events WHERE decision_id = ? ORDER BY timestamp",
                     (decision_id,),
                 ).fetchall()
@@ -105,11 +114,18 @@ class AuditStore:
 
         return await asyncio.to_thread(_run)
 
-    async def export_range(self, from_ts: datetime | None, to_ts: datetime | None) -> list[AuditEvent]:
+    async def export_range(
+        self,
+        from_ts: datetime | None,
+        to_ts: datetime | None,
+    ) -> list[AuditEvent]:
         await self.ensure_ready()
 
         def _run() -> list[AuditEvent]:
-            query = "SELECT event_id, decision_id, event_type, timestamp, payload_before, payload_after, metadata FROM audit_events"
+            query = (
+                "SELECT event_id, decision_id, event_type, timestamp, "
+                "payload_before, payload_after, metadata FROM audit_events"
+            )
             params: list[str] = []
             clauses: list[str] = []
             if from_ts:

@@ -14,17 +14,17 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from rada.core.decision_loop import (
+from rada.core.decision_loop import (  # noqa: E402
     DecisionLoop,
     HoldPolicy,
     NoOpReasoner,
     PassThroughRiskOptimizer,
 )
-from rada.core.reflection_loop import stub_outcome
-from rada.data.export_batch import export_decisions
-from rada.data.storage import InMemoryDecisionStore
-from rada.main import RuntimeSettings, build_data_store
-from rada.schemas import Decision, MarketEvent
+from rada.core.reflection_loop import stub_outcome  # noqa: E402
+from rada.data.export_batch import export_decisions  # noqa: E402
+from rada.data.storage import InMemoryDecisionStore  # noqa: E402
+from rada.main import RuntimeSettings, build_data_store  # noqa: E402
+from rada.schemas import Decision, MarketEvent  # noqa: E402
 
 
 async def _synthetic_decisions(count: int) -> list[Decision]:
@@ -75,11 +75,17 @@ def _parse_since(value: str | None) -> datetime | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export decisions for reflection (batch, off hot path)")
+    parser = argparse.ArgumentParser(
+        description="Export decisions for reflection (batch, off hot path)"
+    )
     parser.add_argument("--output-dir", type=Path, default=Path("."))
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--synthetic-count", type=int, default=0)
-    parser.add_argument("--from-db", action="store_true", help="Read decisions from configured data store")
+    parser.add_argument(
+        "--from-db",
+        action="store_true",
+        help="Read decisions from configured data store",
+    )
     parser.add_argument("--since", default=None, help="ISO8601 lower bound for decision timestamp")
     parser.add_argument("--limit", type=int, default=None, help="Max decisions to export")
     parser.add_argument(

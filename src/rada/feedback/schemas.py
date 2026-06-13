@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from enum import Enum
+from datetime import datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class FeedbackAction(str, Enum):
+class FeedbackAction(StrEnum):
     APPROVE = "APPROVE"
     REJECT = "REJECT"
     FLAG = "FLAG"

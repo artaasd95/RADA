@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Any
 from uuid import uuid4
 
@@ -15,7 +15,7 @@ UtcDateTime = Annotated[
 ]
 
 
-class ActionDirection(str, Enum):
+class ActionDirection(StrEnum):
     """Allowed action directions emitted by the decision pipeline."""
 
     BUY = "BUY"

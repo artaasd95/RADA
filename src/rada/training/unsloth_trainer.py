@@ -49,10 +49,10 @@ class UnslothTrainer:
             raise ValueError(msg)
 
         try:
-            from unsloth import FastLanguageModel  # type: ignore[import-untyped]
-            from trl import SFTTrainer
-            from transformers import TrainingArguments
             from datasets import Dataset
+            from transformers import TrainingArguments
+            from trl import SFTTrainer
+            from unsloth import FastLanguageModel  # type: ignore[import-untyped]
         except ImportError as exc:
             msg = "unsloth backend requires pip install -e '.[unsloth]'"
             raise ImportError(msg) from exc
