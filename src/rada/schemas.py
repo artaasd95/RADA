@@ -50,6 +50,7 @@ class DecisionTrace(BaseModel):
     calc_results: list[dict[str, Any]] = Field(default_factory=list)
     verified_context: dict[str, float] = Field(default_factory=dict)
     synthetic_context: dict[str, float] = Field(default_factory=dict)
+    tool_calls: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ProposedAction(BaseModel):
