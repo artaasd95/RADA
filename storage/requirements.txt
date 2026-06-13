@@ -1,0 +1,6 @@
+# S3 Storage System Requirements
+# Install with: pip install -r storage/requirements.txt
+
+s3cmd>=2.2.0          # S3-compatible storage CLI
+pyyaml>=6.0.1         # YAML configuration
+python-dotenv>=1.0.0  # Environment variable loading
