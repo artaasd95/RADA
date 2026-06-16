@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-06-15T21:31:14.684644",
+  "repository": "G:\\repositories\\RADA",
+  "environment": {
+    "python_version": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:09:58) [MSC v.1929 64 bit (AMD64)]",
+    "pytorch": "2.10.0+cpu",
+    "cuda_available": false
+  },
+  "test_results": {
+    "TrainingConfig": "PASS",
+    "load_training_dataset": "PASS",
+    "build_trainer": "PASS",
+    "resolve_model_path": "PASS",
+    "load_dataset": "PASS",
+    "create_config": "PASS",
+    "build_stub_trainer": "PASS",
+    "stub_training": "PASS",
+    "verify_artifacts": "PASS",
+    "gpu_training": "SKIP (No CUDA)"
+  },
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "skipped": 1,
+    "total": 10
+  }
+}

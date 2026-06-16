@@ -1,0 +1,10 @@
+{
+  "base_model_id": "qwen3-0.6b",
+  "adapter_path": "G:\\repositories\\RADA\\experiments\\adapters\\test-report-001\\qwen3-0.6b",
+  "rank": 16,
+  "alpha": 16,
+  "target_modules": [
+    "q_proj",
+    "v_proj"
+  ]
+}

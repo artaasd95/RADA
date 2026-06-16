@@ -1,0 +1,13 @@
+{
+  "adapter_id": "qwen3-0.6b-test-report-001",
+  "model_id": "qwen3-0.6b",
+  "run_id": "test-report-001",
+  "backend": "stub",
+  "data_source": "export",
+  "distilled_name": null,
+  "method": "reflection",
+  "epochs": 1,
+  "row_count": 15,
+  "schema_version": "feedback_record_v1",
+  "created_at": "2026-06-15T18:01:14.658546+00:00"
+}
