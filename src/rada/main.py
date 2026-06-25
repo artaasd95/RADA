@@ -275,7 +275,7 @@ async def ingest_event(event: MarketEvent, request: Request) -> dict[str, str]:
     return {
         "decision_id": decision.decision_id,
         "direction": decision.proposed_action.direction.value,
-        "flagged": flag,
+        "flagged": str(flag).lower(),
     }
 
 

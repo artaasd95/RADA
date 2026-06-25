@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-06-25T13:38:36.584504+00:00",
+  "config": "G:\\repositories\\RADA\\configs\\llm_freellm.yaml",
+  "model_id": "gpt-oss-20b",
+  "elapsed_seconds": 15.55,
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0
+  },
+  "results": [
+    {
+      "name": "llm_provider_direct",
+      "status": "PASS",
+      "detail": "latency=2567ms tokens={'prompt_tokens': 317, 'completion_tokens': 121}"
+    },
+    {
+      "name": "reasoning_prompt_assembly",
+      "status": "PASS",
+      "detail": "prompt_chars=210"
+    },
+    {
+      "name": "real_reasoner_inference",
+      "status": "PASS",
+      "detail": "model=custom:gpt-oss-20b rationale_len=962"
+    },
+    {
+      "name": "decision_loop_e2e",
+      "status": "PASS",
+      "detail": "decision_id=79b82c48-1860-462a-8b82-0978bde7f076 direction=HOLD"
+    },
+    {
+      "name": "bootstrap_once_byok",
+      "status": "PASS",
+      "detail": "decision_id=ef45c6c0-b4fd-4ec8-a058-451b52cb7990"
+    },
+    {
+      "name": "fastapi_ingest_byok",
+      "status": "PASS",
+      "detail": "decision_id=f207595f-1183-4a71-a012-7467dd687d0e direction=HOLD"
+    },
+    {
+      "name": "metrics_endpoint",
+      "status": "PASS",
+      "detail": "bytes=882"
+    }
+  ]
+}

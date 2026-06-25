@@ -41,6 +41,9 @@ class InMemoryEventBus(BaseEventBus):
     async def dequeue(self) -> MarketEvent:
         return await self._queue.get()
 
+    async def close(self) -> None:
+        return None
+
 
 class RedisEventBus(BaseEventBus):
     """Redis list-backed bus (same channel semantics as bootstrap main)."""
@@ -170,6 +173,15 @@ class ZeroMQEventBus(BaseEventBus):
         if not self._use_zmq:
             return await self._fallback.dequeue()
         return await self._local_queue.get()
+
+    async def close(self) -> None:
+        if self._pub is not None:
+            self._pub.close()
+            self._pub = None
+        if self._sub is not None:
+            self._sub.close()
+            self._sub = None
+        await self._fallback.close()
 
 
 async def build_event_bus(mode: str | None = None) -> BaseEventBus:

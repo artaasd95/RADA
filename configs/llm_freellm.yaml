@@ -1,0 +1,5 @@
+# BYOK: OpenAI-compatible FreeLLM endpoint (see freellmapi.txt for credentials)
+provider: custom
+model_id: gpt-oss-20b
+base_url: http://127.0.0.1:3001
+api_key_env: FREELLM_API_KEY
