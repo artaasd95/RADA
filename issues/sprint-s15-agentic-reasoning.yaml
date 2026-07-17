@@ -1,0 +1,162 @@
+# S15 — Agentic Reasoning Integration: Tool schema, placeholders, tool-aware adapters.
+# Integrates RADA decision pipeline with raft-lm tool-trained models via shared tool layer.
+# Depends on S14 baseline ops, S6 adapters, S8 search algorithms.
+# STATUS: COMPLETED 2026-06-13 (commit 584d4cd) — All tool schemas, implementations, and integrations complete.
+---
+version: 2
+archived: true
+sprint: S15
+sprint_start: 2026-06-24
+sprint_target_end: 2026-08-12
+sprint_completed: 2026-06-13
+repo: artaasd95/RADA
+issues:
+  - id: S15-01
+    title: "Define shared Tool schema and callable interfaces for agentic reasoning"
+    status: completed
+    priority: p0
+    area: architecture
+    milestone: "S15 - Agentic Reasoning"
+    due: 2026-06-28
+    note: "COMPLETED 2026-06-13 (commit 584d4cd). Tool schema with 5 OpenAI function-calling style schemas defined and documented."
+    labels:
+      - "sprint/S15"
+      - "area/architecture"
+      - "type/feature"
+      - "priority/p0"
+    depends_on: []
+    note: "Foundation for tool-aware training (raft-lm S9) and tool-enabled decision pipeline. Coordinate with raft-lm on schema."
+    acceptance:
+      - "docs/tools/TOOL-SCHEMA.md defines 5–7 core tools (RiskCalculator, ActionProposer, ConstraintChecker, OutcomeEvaluator, FeedbackGenerator, etc.) with typed inputs/outputs (Pydantic)"
+      - "src/rada/tools/ package structure and base classes defined"
+      - "Tool semantics aligned with portfolio Agent-Stack-Definitions and raft-lm S9 training tasks"
+    artifacts:
+      - "docs/tools/TOOL-SCHEMA.md"
+      - "src/rada/tools/__init__.py"
+      - "src/rada/tools/base.py"
+      - "tests/unit/test_tool_schema.py"
+
+  - id: S15-02
+    title: "Implement tool placeholder stubs in RADA (built-in calculator backend)"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "S15 - Agentic Reasoning"
+    due: 2026-07-08
+    note: "COMPLETED 2026-06-13 (commit 584d4cd). All 5 tool implementations (RiskCalculator, ConstraintChecker, ActionProposer, OutcomeEvaluator, FeedbackGenerator) complete and tested."
+    labels:
+      - "sprint/S15"
+      - "area/backend"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S15-01
+    acceptance:
+      - "src/rada/tools/ implements placeholders: RiskCalculatorImpl (wraps TailWarp or stubs), ActionProposerImpl, ConstraintCheckerImpl, OutcomeEvaluatorImpl"
+      - "Stubs return synthetic data when real adapters not wired; wiring is optional and explicit"
+      - "Unit tests: each tool is callable and produces valid output schema"
+      - "Integration test: decision pipeline runs with tool placeholders, no adapter wiring required"
+    artifacts:
+      - "src/rada/tools/calculators.py"
+      - "src/rada/tools/proposers.py"
+      - "src/rada/tools/evaluators.py"
+      - "tests/unit/test_tool_stubs.py"
+      - "tests/integration/test_decision_with_tools.py"
+
+  - id: S15-03
+    title: "Create RaftLMTrainedModelAdapter — load raft-lm models and call with tool context"
+    status: completed
+    priority: p1
+    area: adapters
+    milestone: "S15 - Agentic Reasoning"
+    due: 2026-07-22
+    note: "COMPLETED 2026-06-13 (commit 584d4cd). RaftLMTrainedModelAdapter implemented; loads raft-lm checkpoints and integrates with RADA decision loop."
+    labels:
+      - "sprint/S15"
+      - "area/adapters"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S15-02
+    note: "Follows RADA-2026-19 pluggable LLM adapter pattern. Does not modify hot path; used in policy selection step."
+    acceptance:
+      - "src/rada/adapters/raft_auditor_adapter.py extends BaseLLMBackend for raft-lm checkpoints"
+      - "Adapter accepts tool descriptors (callable interface); passes to model for reasoning"
+      - "Returns structured decision with tool_calls logged"
+      - "Integration test: RADA ingest → adapter → decision with tool trace"
+      - "Checkpoint from raft-lm S9 loads and runs without code changes"
+    artifacts:
+      - "src/rada/adapters/raft_auditor_adapter.py"
+      - "tests/integration/test_raft_auditor_adapter.py"
+
+  - id: S15-04
+    title: "Wire RaftLMTrainedModelAdapter into policy selection step (post-calc, pre-action)"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "S15 - Agentic Reasoning"
+    due: 2026-07-29
+    note: "COMPLETED 2026-06-13 (commit 584d4cd). ToolAwarePolicy chains all tools; DecisionTrace.tool_calls logs tool execution for audit."
+    labels:
+      - "sprint/S15"
+      - "area/backend"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S15-03
+    acceptance:
+      - "decision_loop accepts optional --model-adapter flag for policy selection step"
+      - "When enabled: decision pipeline runs policy gate → model decision (with tools) → optional override if confidence high"
+      - "Trace logs model reasoning, tool calls, and confidence alongside policy metrics"
+      - "Audit trail immutable regardless of policy or model override"
+    artifacts:
+      - "src/rada/core/decision_loop.py (updated)"
+      - "tests/integration/test_decision_with_model_adapter.py"
+
+  - id: S15-05
+    title: "Add RadaToolsAdapter — expose policy metrics and audit functions as tools"
+    status: completed
+    priority: p2
+    area: adapters
+    milestone: "S15 - Agentic Reasoning"
+    due: 2026-08-05
+    note: "COMPLETED 2026-06-13 (commit 584d4cd). Tool-aware policy and adapter integration framework ready for expansion."
+    labels:
+      - "sprint/S15"
+      - "area/adapters"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S15-04
+    acceptance:
+      - "RiskGate.check(action) → calls TailWarp via adapter, returns {approved, reason, breach_rate}"
+      - "AuditLogger.record(action, tool_calls, outcome) → persists DecisionTrace for reflection and RADA-FEEDBACK export"
+      - "Both tools callable from RaftLMTrainedModelAdapter and from reasoner pipeline"
+      - "Integration test: model calls tools → tools call RADA infrastructure → feedback exported"
+    artifacts:
+      - "src/rada/tools/rada_adapters.py"
+      - "tests/integration/test_rada_tools_adapter.py"
+
+  - id: S15-06
+    title: "Document agentic reasoning architecture and integration examples"
+    status: completed
+    priority: p2
+    area: docs
+    milestone: "S15 - Agentic Reasoning"
+    due: 2026-08-12
+    note: "COMPLETED 2026-06-13 (commit 584d4cd). Tool schema, integration guide, and adapter documentation complete."
+    labels:
+      - "sprint/S15"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p2"
+    depends_on:
+      - S15-05
+    acceptance:
+      - "docs/agentic-reasoning.md explains tool schema, adapter wiring, and raft-lm integration"
+      - "examples/ contains one end-to-end example: ingest → calc → tool-aware model decision → action → outcome feedback"
+      - "README links to new docs; mentions raft-lm S9 as required for full capabilities"
+    artifacts:
+      - "docs/agentic-reasoning.md"
+      - "examples/end_to_end_agentic.py"
+      - "README.md (updated)"

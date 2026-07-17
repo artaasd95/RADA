@@ -1,0 +1,753 @@
+version: 2
+archived: true
+sprint: Product-MVP
+sprint_start: 2026-06-06
+sprint_target_end: 2026-08-07
+repo: artaasd95/RADA
+issues:
+- id: SP-CALC-01
+  title: Define CalcRequest / CalcResult Pydantic schemas with confidence field
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Numerical Verification
+  due: 2026-06-13
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on: []
+  acceptance:
+  - CalcRequest and CalcResult Pydantic models defined in src/rada/calc/schemas.py
+  - Fields include expression/context/expected_units + computed value + confidence
+    (HIGH/MEDIUM/LOW)
+  - Unit tests validate schema roundtrip and validation errors
+  artifacts:
+  - src/rada/calc/schemas.py
+  - tests/unit/test_calc_schemas.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-CALC-02
+  title: Implement src/rada/calc/engine.py — CVaR, position size, drawdown with local
+    Python fallback
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Numerical Verification
+  due: 2026-06-20
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-CALC-01
+  acceptance:
+  - compute_cvar(returns, alpha) with historical / parametric / cornish-fisher options
+  - compute_position_size(capital, cvar, risk_budget) implements fractional sizing
+  - compute_drawdown(prices_or_returns) returns max drawdown and duration
+  - All functions return dict with value, units, confidence, method
+  - Pure-Python/NumPy fallback always available (no CUDA dep)
+  artifacts:
+  - src/rada/calc/engine.py
+  - tests/unit/test_calc_engine.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-CALC-03
+  title: Wire calc step into decision_loop before LLM selection — calc results appear
+    in DecisionTrace
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Numerical Verification
+  due: 2026-06-27
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-CALC-02
+  acceptance:
+  - decision_loop calls calc engine on relevant event fields before adapter selection
+  - DecisionTrace includes calc_results list with provenance
+  - LLM prompt context receives verified numbers (never lets LLM invent raw numbers
+    for these fields)
+  - 'Integration test: shock event produces trace with calc step and risk gate using
+    calc values'
+  artifacts:
+  - src/rada/decision_loop.py
+  - tests/integration/test_decision_with_calc.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-CALC-04
+  title: 'Unit tests: 5 known-answer fixtures per metric function'
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Numerical Verification
+  due: 2026-06-20
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/test
+  - priority/p1
+  depends_on:
+  - SP-CALC-02
+  acceptance:
+  - ≥5 deterministic fixtures per function (cvar, position_size, drawdown)
+  - Tolerances documented; NaN/Inf policy explicit and tested
+  - pytest collects and passes under tests/unit/test_calc_engine.py
+  artifacts:
+  - tests/unit/test_calc_engine.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-CALC-05
+  title: OPT-INTEG-TW — optional TailWarp dispatch (degrades to local rada.calc)
+  status: deferred
+  priority: p3
+  area: adapters
+  milestone: v1.0 Product-MVP — Numerical Verification
+  due: 2026-09-01
+  labels:
+  - sprint/Product-MVP
+  - area/adapters
+  - type/feature
+  - priority/p3
+  - opt-in/integration
+  depends_on:
+  - SP-CALC-03
+  note: Not required for v1.0 exit. Local NumPy engine (SP-CALC-02) is the required
+    path. Mock TailwarpOptimizerAdapter remains default. Deferred to OPT-INTEG v2.0
+    — sync skips GitHub issue creation.
+  acceptance:
+  - calc engine has optional TailwarpOptimizerAdapter path (import guarded)
+  - When adapter unavailable or call fails, falls back to local engine with confidence=MEDIUM
+  - Result provenance records which engine produced the value
+  artifacts:
+  - src/rada/calc/engine.py
+  - src/rada/adapters/tailwarp_optimizer.py
+- id: SP-CALC-06
+  title: docs/calc.md — API reference + 'how RADA verifies numbers' explainer
+    status: completed
+  priority: p2
+  area: docs
+  milestone: v1.0 Product-MVP — Numerical Verification
+  due: 2026-07-11
+  labels:
+  - sprint/Product-MVP
+  - area/docs
+  - type/docs
+  - priority/p2
+  depends_on:
+  - SP-CALC-03
+  acceptance:
+  - docs/calc.md documents the calc step contract and why it precedes LLM selection
+  - Examples of verified vs unverified numerical claims
+  - Cross-linked from Architecture.md and README
+  artifacts:
+  - docs/calc.md
+- id: SP-OBS-01
+  title: src/rada/observability/ scaffold — tracer, metrics, structured log modules
+  status: completed
+  priority: p1
+  area: observability
+  milestone: v1.0 Product-MVP — Observability
+  due: 2026-06-13
+  labels:
+  - sprint/Product-MVP
+  - area/observability
+  - type/feature
+  - priority/p1
+  depends_on: []
+  acceptance:
+  - src/rada/observability/__init__.py exports get_tracer, get_metrics, get_logger
+  - Optional import of opentelemetry and prometheus_client (graceful when absent)
+  - Config driven via observability.yaml or env
+  artifacts:
+  - src/rada/observability/
+  - configs/observability.yaml
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-OBS-02
+  title: OTel spans in decision_loop (ingest → calc → select → risk gate → persist)
+  status: completed
+  priority: p1
+  area: observability
+  milestone: v1.0 Product-MVP — Observability
+  due: 2026-06-20
+  labels:
+  - sprint/Product-MVP
+  - area/observability
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-OBS-01
+  - SP-CALC-03
+  acceptance:
+  - Each major stage wrapped in start_as_current_span
+  - Attributes include event_id, decision_id, cvar_value, llm_model, latency_ms
+  - Traces export to console or OTLP when enabled
+  artifacts:
+  - src/rada/decision_loop.py
+  - src/rada/observability/tracer.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-OBS-03
+  title: 'Prometheus metrics endpoint: decisions, latency histogram, risk gate rejections,
+    errors'
+  status: completed
+  priority: p1
+  area: observability
+  milestone: v1.0 Product-MVP — Observability
+  due: 2026-06-27
+  labels:
+  - sprint/Product-MVP
+  - area/observability
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-OBS-01
+  acceptance:
+  - /metrics handler registered (FastAPI or existing web layer)
+  - rada_decisions_total counter
+  - rada_decision_latency_seconds histogram (buckets for P95 target)
+  - rada_risk_gate_rejections_total , rada_loop_errors_total
+  - Works in docker-compose.observability.yml
+  artifacts:
+  - src/rada/observability/metrics.py
+  - docker-compose.observability.yml
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-OBS-04
+  title: Docker Compose observability overlay (Prometheus + Grafana)
+  status: completed
+  priority: p2
+  area: infra
+  milestone: v1.0 Product-MVP — Observability
+  due: 2026-07-04
+  labels:
+  - sprint/Product-MVP
+  - area/infra
+  - type/infra
+  - priority/p2
+  depends_on:
+  - SP-OBS-03
+  acceptance:
+  - docker-compose.observability.yml brings up prometheus + grafana + app with sidecar
+  - Grafana dashboard json for rada decisions/latency
+  - Documented in docs/observability.md
+  artifacts:
+  - docker-compose.observability.yml
+  - grafana/dashboards/rada.json
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-OBS-05
+  title: 'Alert rule definitions: latency P95 > 500ms, error rate > 1%, risk gate
+    rejection spike'
+  status: completed
+  priority: p2
+  area: observability
+  milestone: v1.0 Product-MVP — Observability
+  due: 2026-07-11
+  labels:
+  - sprint/Product-MVP
+  - area/observability
+  - type/ops
+  - priority/p2
+  depends_on:
+  - SP-OBS-03
+  acceptance:
+  - prometheus/alerts/rada.yml with the three rules
+  - Rules documented with runbook links
+  artifacts:
+  - prometheus/alerts/rada.yml
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-OBS-06
+  title: docs/observability.md — metric definitions, trace structure, alert rules
+  status: completed
+  priority: p2
+  area: docs
+  milestone: v1.0 Product-MVP — Observability
+  due: 2026-07-18
+  labels:
+  - sprint/Product-MVP
+  - area/docs
+  - type/docs
+  - priority/p2
+  depends_on:
+  - SP-OBS-02
+  - SP-OBS-03
+  acceptance:
+  - Full catalog of metrics + span names + labels
+  - How to enable/disable; sampling notes
+  - Linked from runbook and README
+  artifacts:
+  - docs/observability.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-AUDIT-01
+  title: AuditEvent Pydantic schema + append-only DB table (no DELETE)
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Audit Trail
+  due: 2026-06-13
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on: []
+  acceptance:
+  - AuditEvent enum for DECISION, CALC, LLM_CALL, RISK_GATE, HUMAN_FEEDBACK, POLICY_UPDATE
+  - DB table with row-level security or trigger preventing DELETE
+  - Migration for existing DBs
+  artifacts:
+  - src/rada/audit/schemas.py
+  - migrations/audit_events/
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-AUDIT-02
+  title: Audit writer middleware — auto-log every decision pipeline step
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Audit Trail
+  due: 2026-06-20
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-AUDIT-01
+  - SP-CALC-03
+  acceptance:
+  - Context manager or decorator that writes AuditEvent on entry/exit of stages
+  - Captures before/after state for critical steps
+  - Never blocks the hot path (fire-and-forget or queue)
+  artifacts:
+  - src/rada/audit/writer.py
+  - src/rada/decision_loop.py (instrumented)
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-AUDIT-03
+  title: 'Query API: GET /audit/decision/{id}, GET /audit/export?from=&to= (NDJSON)'
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Audit Trail
+  due: 2026-06-27
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-AUDIT-02
+  acceptance:
+  - FastAPI (or existing) endpoints return full event chain for a decision
+  - Export streams NDJSON for date range; suitable for regulatory handoff
+  - 'Authz: operator role required'
+  artifacts:
+  - src/rada/audit/api.py
+  - tests/integration/test_audit_api.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-AUDIT-04
+  title: Streamlit audit explorer tab (filter, search, timeline view)
+  status: completed
+  priority: p2
+  area: frontend
+  milestone: v1.0 Product-MVP — Audit Trail
+  due: 2026-07-04
+  labels:
+  - sprint/Product-MVP
+  - area/frontend
+  - type/feature
+  - priority/p2
+  depends_on:
+  - SP-AUDIT-03
+  acceptance:
+  - New tab in existing Streamlit app
+  - 'Filters: date, event_type, risk_level, decision_id'
+  - Timeline visualization of events for selected decision
+  artifacts:
+  - apps/dashboard.py (or audit tab module)
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-AUDIT-05
+  title: scripts/export_audit.py — NDJSON export CLI with date range
+  status: completed
+  priority: p2
+  area: data
+  milestone: v1.0 Product-MVP — Audit Trail
+  due: 2026-07-11
+  labels:
+  - sprint/Product-MVP
+  - area/data
+  - type/tool
+  - priority/p2
+  depends_on:
+  - SP-AUDIT-03
+  acceptance:
+  - CLI accepts --from --to --output ; produces valid NDJSON
+  - Includes all AuditEvent types; documented in runbook
+  artifacts:
+  - scripts/export_audit.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-AUDIT-06
+  title: docs/audit.md — event catalog, query API reference, compliance guide
+  status: completed
+  priority: p2
+  area: docs
+  milestone: v1.0 Product-MVP — Audit Trail
+  due: 2026-07-18
+  labels:
+  - sprint/Product-MVP
+  - area/docs
+  - type/docs
+  - priority/p2
+  depends_on:
+  - SP-AUDIT-01
+  acceptance:
+  - Catalog of every AuditEvent type + fields
+  - Example curl for query and export
+  - Notes on CCAR/DFAST/Basel implications (immutability, attribution)
+  artifacts:
+  - docs/audit.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-HITL-01
+  title: HumanFeedbackRecord schema + DB migration
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Human Validation
+  due: 2026-06-20
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-AUDIT-01
+  acceptance:
+  - HumanFeedbackRecord with decision_id, reviewer_id, action (APPROVE/REJECT/FLAG/ANNOTATE),
+    note, timestamp
+  - Immutable append (no update after write)
+  - Migration + index on decision_id
+  artifacts:
+  - src/rada/feedback/schemas.py
+  - migrations/human_feedback/
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-HITL-02
+  title: 'Feedback API endpoints: POST /feedback/submit, GET /feedback/pending, POST
+    /feedback/approve'
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Human Validation
+  due: 2026-06-27
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-HITL-01
+  acceptance:
+  - Submit accepts JSON and persists with actor attribution
+  - Pending returns list ordered by risk or flag severity
+  - Approve closes the review and optionally triggers policy refresh signal
+  artifacts:
+  - src/rada/feedback/api.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-HITL-03
+  title: Streamlit 'Review Queue' tab — flagged decisions, approve/reject/annotate
+    controls
+  status: completed
+  priority: p1
+  area: frontend
+  milestone: v1.0 Product-MVP — Human Validation
+  due: 2026-07-04
+  labels:
+  - sprint/Product-MVP
+  - area/frontend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-HITL-02
+  acceptance:
+  - Tab lists decisions with FLAGGED or PENDING_REVIEW status
+  - Buttons for approve/reject + textarea for note
+  - On submit, calls the feedback API and refreshes list
+  artifacts:
+  - apps/dashboard.py (review queue tab)
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-HITL-04
+  title: Auto-flagging rules engine (CVaR > threshold, LLM confidence < threshold,
+    anomaly)
+  status: completed
+  priority: p1
+  area: backend
+  milestone: v1.0 Product-MVP — Human Validation
+  due: 2026-07-11
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - SP-CALC-03
+  acceptance:
+  - Configurable thresholds in policy profile or observability config
+  - Decision marked FLAGGED at persist time if any rule fires
+  - Flags recorded in Decision + AuditEvent
+  artifacts:
+  - src/rada/policy/flagging.py
+  - src/rada/decision_loop.py (flag integration)
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-HITL-05
+  title: Wire feedback records into reflection_loop as priority training signal
+  status: completed
+  priority: p2
+  area: backend
+  milestone: v1.0 Product-MVP — Human Validation
+  due: 2026-07-25
+  labels:
+  - sprint/Product-MVP
+  - area/backend
+  - type/feature
+  - priority/p2
+  depends_on:
+  - SP-HITL-01
+  - S3-03
+  acceptance:
+  - reflection_loop queries recent HumanFeedbackRecord before other signals
+  - Approved/rejected decisions bias policy profile updates
+  - Documented in docs/human-validation.md
+  artifacts:
+  - src/rada/reflection_loop.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-HITL-06
+  title: docs/human-validation.md — workflow guide + compliance considerations
+  status: completed
+  priority: p2
+  area: docs
+  milestone: v1.0 Product-MVP — Human Validation
+  due: 2026-07-18
+  labels:
+  - sprint/Product-MVP
+  - area/docs
+  - type/docs
+  - priority/p2
+  depends_on:
+  - SP-HITL-03
+  acceptance:
+  - Step-by-step reviewer workflow with screenshots
+  - Regulatory notes (who can approve, retention, audit of reviews)
+  - Linked from Streamlit and runbook
+  artifacts:
+  - docs/human-validation.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-DEPLOY-01
+  title: Multi-stage production Dockerfile (builder/runtime, non-root, healthcheck)
+  status: completed
+  priority: p1
+  area: infra
+  milestone: v1.0 Product-MVP — Production Deployment
+  due: 2026-06-20
+  labels:
+  - sprint/Product-MVP
+  - area/infra
+  - type/infra
+  - priority/p1
+  depends_on: []
+  acceptance:
+  - 'Dockerfile uses multi-stage: build deps then slim runtime'
+  - USER non-root; HEALTHCHECK on /health or equivalent
+  - Build arg for prod vs dev
+  artifacts:
+  - Dockerfile
+  - .dockerignore
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-DEPLOY-02
+  title: docker-compose.prod.yml with resource limits, restart policies, env injection
+  status: completed
+  priority: p1
+  area: infra
+  milestone: v1.0 Product-MVP — Production Deployment
+  due: 2026-06-27
+  labels:
+  - sprint/Product-MVP
+  - area/infra
+  - type/infra
+  - priority/p1
+  depends_on:
+  - SP-DEPLOY-01
+  acceptance:
+  - Separate from dev compose; uses production image tag
+  - 'deploy: resources: limits/requests; restart: unless-stopped'
+  - env_file or secrets for DB/Redis/LLM keys
+  - 'One-command: docker compose -f docker-compose.prod.yml up -d'
+  artifacts:
+  - docker-compose.prod.yml
+  - env.example.prod
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-DEPLOY-03
+  title: 'Kubernetes manifests: Deployment, Service, ConfigMap, HPA (min 1, max 3)'
+  status: completed
+  priority: p2
+  area: infra
+  milestone: v1.0 Product-MVP — Production Deployment
+  due: 2026-07-25
+  labels:
+  - sprint/Product-MVP
+  - area/infra
+  - type/infra
+  - priority/p2
+  depends_on:
+  - SP-DEPLOY-02
+  acceptance:
+  - deploy/k8s/ contains yaml for Deployment + Service + ConfigMap + HorizontalPodAutoscaler
+  - HPA targets 50% CPU, min 1 max 3 replicas
+  - ConfigMap for non-secret config; documented image pull
+  artifacts:
+  - deploy/k8s/
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-DEPLOY-04
+  title: 'Enable GitHub Actions on RADA repo: lint + test + image build (post-MVP
+    gate)'
+  status: completed
+  priority: p1
+  area: infra
+  milestone: v1.0 Product-MVP — Production Deployment
+  due: 2026-07-11
+  labels:
+  - sprint/Product-MVP
+  - area/infra
+  - type/ci
+  - priority/p1
+  depends_on:
+  - SP-DEPLOY-01
+  acceptance:
+  - .github/workflows/ci.yml in the RADA code repo (not vault) with lint, pytest,
+    build
+  - Image build job produces tagged image (no push yet)
+  - Documented how to enable the workflows (they are samples until now)
+  artifacts:
+  - samples/github-actions/ci.yml (or moved to .github/workflows/ in target)
+  - RADA code repo .github/workflows/ (after this task)
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-DEPLOY-05
+  title: docs/runbook-production.md — full operator deploy/rollback/recovery guide
+  status: completed
+  priority: p1
+  area: docs
+  milestone: v1.0 Product-MVP — Production Deployment
+  due: 2026-07-04
+  labels:
+  - sprint/Product-MVP
+  - area/docs
+  - type/docs
+  - priority/p1
+  depends_on:
+  - SP-DEPLOY-02
+  acceptance:
+  - 'Step-by-step: first deploy, config secrets, health verification'
+  - 'Rollback: image tag + compose down/up or k8s rollout undo'
+  - 'Incident: DB migration rollback, log collection, restart loops'
+  - Links to all env vars, compose variants, k8s yamls
+  artifacts:
+  - docs/runbook-production.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-DEPLOY-06
+  title: scripts/deploy_check.sh pre-deploy validation (env, config, port availability)
+  status: completed
+  priority: p2
+  area: infra
+  milestone: v1.0 Product-MVP — Production Deployment
+  due: 2026-07-18
+  labels:
+  - sprint/Product-MVP
+  - area/infra
+  - type/tool
+  - priority/p2
+  depends_on:
+  - SP-DEPLOY-02
+  acceptance:
+  - Bash script checks required env vars, DB connectivity, port free, docker available
+  - Exits non-zero with clear messages; used in runbook
+  - Safe to run in CI or on target host
+  artifacts:
+  - scripts/deploy_check.sh
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-NB-01
+  title: 'Notebook: download and cache LLM / embedding models for adapter and reflection
+    experiments'
+  status: completed
+  priority: p1
+  area: notebooks
+  milestone: v1.0 Product-MVP — Experiment Notebooks
+  due: 2026-07-11
+  labels:
+  - sprint/Product-MVP
+  - area/notebooks
+  - area/training
+  - type/task
+  - priority/p1
+  depends_on:
+  - SP-CALC-02
+  acceptance:
+  - notebooks/00_download_models.ipynb caches models used by decision adapters (scenario,
+    auditor, optional HF backend)
+  - Configurable cache root; idempotent; documents which adapter config keys reference
+    each model
+  - CPU-only verification cell (load tokenizer/config without full GPU train)
+  - Linked from docs or README experiments section
+  artifacts:
+  - notebooks/00_download_models.ipynb
+  - notebooks/README.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-NB-02
+  title: 'Notebook: reflection / policy training and evaluation experiments (feedback
+    → train → metrics)'
+  status: completed
+  priority: p1
+  area: notebooks
+  milestone: v1.0 Product-MVP — Experiment Notebooks
+  due: 2026-07-18
+  labels:
+  - sprint/Product-MVP
+  - area/notebooks
+  - area/training
+  - type/task
+  - priority/p1
+  depends_on:
+  - SP-NB-01
+  - SP-HITL-01
+  acceptance:
+  - notebooks/01_train_and_evaluate.ipynb exercises reflection_loop / policy update
+    path with exported HumanFeedbackRecord or synthetic fixture
+  - Eval cells report decision-quality proxies (calc alignment, risk gate stats) on
+    held-out events
+  - Artifacts written under experiments/notebooks/ (config, seed, metrics JSON)
+  - Mock adapter path runs without live API keys
+  artifacts:
+  - notebooks/01_train_and_evaluate.ipynb
+  - notebooks/utility/experiment_helpers.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-NB-03
+  title: 'Notebook: reflection training and evaluation — Colab-ready variant'
+  status: completed
+  priority: p2
+  area: notebooks
+  milestone: v1.0 Product-MVP — Experiment Notebooks
+  due: 2026-07-25
+  labels:
+  - sprint/Product-MVP
+  - area/notebooks
+  - area/training
+  - type/task
+  - priority/p2
+  depends_on:
+  - SP-NB-02
+  acceptance:
+  - notebooks/01_train_and_evaluate_colab.ipynb mirrors 01_train_and_evaluate with
+    Colab preamble (install, GPU, optional Drive cache)
+  - BYOK / usage keys via Colab secrets only; training cells default to mock adapters
+  - Same artifact layout as local notebook for comparability
+  - notebooks/README.md documents Colab vs docker-compose local dev
+  artifacts:
+  - notebooks/01_train_and_evaluate_colab.ipynb
+  - notebooks/README.md (Colab section)
+  note: Completed 2026-06-11 on develop (portfolio execution plan).

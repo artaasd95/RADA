@@ -1,0 +1,98 @@
+# S9 — Integration & scale (post-MVP). Search ↔ decision loop, monitoring, kdb+ eval.
+---
+version: 2
+archived: true
+sprint: S9
+sprint_start: 2026-11-21
+sprint_target_end: 2026-12-18
+repo: artaasd95/RADA
+issues:
+  - id: S9-01
+    title: "Connect search layer to decision loop"
+    status: completed
+    priority: p2
+    area: backend
+    milestone: "R6 — Data & search"
+    due: 2026-11-28
+    labels:
+      - "sprint/S9"
+      - "ws1:core"
+      - "ws5:search"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S8-04
+    acceptance:
+      - "src/rada/core/search_loop.py optional path proposes actions via MCTS before risk gate"
+      - "Feature-flagged in configs; default off preserves MVP hot path"
+      - "Integration test: search-enabled shock scenario end-to-end"
+    artifacts:
+      - "src/rada/core/search_loop.py"
+      - "tests/integration/test_search_decision_integration.py"
+
+  - id: S9-02
+    title: "Production monitoring and alerting hooks"
+    status: completed
+    priority: p2
+    area: infra
+    milestone: "R6 — Data & search"
+    due: 2026-12-05
+    labels:
+      - "sprint/S9"
+      - "ws2:infra"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S9-01
+    acceptance:
+      - "Expand metrics.py with latency histograms, queue depth, CVaR breach counter"
+      - "Alert rules documented for Prometheus-style scraping or log-based alerts"
+      - "docker-compose.monitoring.yml optional overlay"
+    artifacts:
+      - "src/rada/utils/metrics.py"
+      - "docker-compose.monitoring.yml"
+      - "docs/monitoring.md"
+
+  - id: S9-03
+    title: "Enhanced demo documentation for data and search layers"
+    status: completed
+    priority: p3
+    area: docs
+    milestone: "R6 — Data & search"
+    due: 2026-12-11
+    labels:
+      - "sprint/S9"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p3"
+    depends_on:
+      - S9-02
+    acceptance:
+      - "docs/post-mvp-demo.md walks through data + search capabilities"
+      - "Streamlit dashboard optional panels for search metrics"
+      - "Aligns with vault Roadmap R6 milestone"
+    artifacts:
+      - "docs/post-mvp-demo.md"
+      - "apps/streamlit/dashboard.py"
+
+  - id: S9-04
+    title: "Evaluate kdb+ hot tier vs Timescale warm tier"
+    status: completed
+    priority: p3
+    area: data
+    milestone: "R6 — Data & search"
+    due: 2026-12-18
+    labels:
+      - "sprint/S9"
+      - "ws4:data"
+      - "type/spike"
+      - "priority/p3"
+    depends_on:
+      - S9-03
+    acceptance:
+      - "Spike doc compares ingest latency, ops burden, licensing for kdb+ vs Timescale"
+      - "Recommendation recorded in docs/decisions.md"
+      - "No production kdb+ deployment required in this sprint"
+    artifacts:
+      - "docs/spikes/kdb-vs-timescale.md"
+      - "docs/decisions.md"

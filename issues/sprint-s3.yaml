@@ -1,0 +1,107 @@
+# S3 — Memory & conscience (Weeks 6–8). Audit, policy update, reflection loop.
+# S3-03 reflection_loop completed; soak harness (S3-04) shipped with stub reflection path.
+---
+version: 2
+archived: true
+sprint: S3
+sprint_start: 2026-07-03
+sprint_target_end: 2026-07-23
+repo: artaasd95/RADA
+issues:
+  - id: S3-01
+    title: "Implement RaftAuditorAdapter behind BaseAuditor"
+    status: completed
+    priority: p1
+    area: adapters
+    milestone: "R3 — Memory & conscience"
+    due: 2026-07-09
+    labels:
+      - "sprint/S3"
+      - "ws3:adapters"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S2-04
+    acceptance:
+      - "src/rada/adapters/raft_auditor.py scores faithfulness on DecisionTrace"
+      - "faithfulness_score written back to trace or sidecar audit table"
+      - "Contract tests with fixture traces; no hot-path blocking"
+    artifacts:
+      - "src/rada/adapters/raft_auditor.py"
+      - "tests/unit/test_raft_auditor_adapter.py"
+    note: >
+      MVP mock/stub auditor off hot path; live raft-lm wiring deferred (same pattern as S2-06).
+
+  - id: S3-02
+    title: "Implement TrinityAdapter for offline policy updates"
+    status: completed
+    priority: p1
+    area: adapters
+    milestone: "R3 — Memory & conscience"
+    due: 2026-07-13
+    labels:
+      - "sprint/S3"
+      - "ws3:adapters"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S2-04
+    acceptance:
+      - "src/rada/adapters/trinity_policy.py exposes offline update from P&L / outcome batch"
+      - "Policy checkpoint hot-swappable without restarting ingest workers"
+      - "Unit test proves checkpoint version increments after update"
+    artifacts:
+      - "src/rada/adapters/trinity_policy.py"
+      - "tests/unit/test_trinity_adapter.py"
+    note: >
+      MVP stub policy update path; live trinity-rft integration deferred from main execution loop.
+
+  - id: S3-03
+    title: "Build reflection_loop off the hot decision path"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R3 — Memory & conscience"
+    due: 2026-07-17
+    labels:
+      - "sprint/S3"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S3-01
+      - S3-02
+    acceptance:
+      - "src/rada/core/reflection_loop.py consumes completed Decisions asynchronously"
+      - "Invokes auditor then policy update; decision loop unchanged"
+      - "Integration test: N decisions → audit scores + policy checkpoint update"
+    artifacts:
+      - "src/rada/core/reflection_loop.py"
+      - "tests/integration/test_reflection_loop.py"
+
+  - id: S3-04
+    title: "Continuous run harness and audit report (48h target, 4h MVP smoke)"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R3 — Memory & conscience"
+    due: 2026-07-23
+    labels:
+      - "sprint/S3"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S3-01
+      - S3-02
+    acceptance:
+      - "scripts/soak_run.py runs ingest + decision + reflection for configurable duration"
+      - "4h smoke gate passes in CI-local pytest marker or documented manual run"
+      - "Audit report export: JSON/parquet summary of faithfulness scores and policy versions"
+      - "README documents how to launch 48h staging soak post-MVP"
+    artifacts:
+      - "scripts/soak_run.py"
+      - "src/rada/data/audit_report.py"
+      - "tests/integration/test_soak_smoke.py"
+    note: >
+      Soak harness uses stub reflection until S3-03 lands; decision hot path unaffected.

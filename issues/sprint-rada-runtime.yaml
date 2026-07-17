@@ -1,0 +1,179 @@
+# RADA-runtime — standalone production deploy profiles inside RADA repo (sub-project).
+# RT-04/05 are optional v2.0 sidecars — deferred, not v1.0 blockers.
+# Code repo: g:\repositories\RADA
+---
+version: 2
+archived: true
+sprint: RADA-Runtime
+sprint_start: 2026-07-15
+sprint_target_end: 2026-08-07
+repo: artaasd95/RADA
+issues:
+  - id: RT-01
+    title: "Define runtime/ layout — compose profiles, env templates, README"
+    status: completed
+    priority: p1
+    area: infra
+    milestone: "RADA-Runtime — Scaffold"
+    due: 2026-07-18
+    labels:
+      - "sprint/RADA-Runtime"
+      - "area/infra"
+      - "type/infra"
+      - "priority/p1"
+    depends_on:
+      - SP-DEPLOY-02
+    note: "Sub-project of RADA; not a separate GitHub org repo. See Projects/RADA/RADA-Runtime.md"
+    acceptance:
+      - "runtime/compose/, runtime/profiles/, runtime/README.md"
+      - "Documents standalone-first: RADA-only is default profile"
+    artifacts:
+      - "runtime/README.md"
+
+  - id: RT-02
+    title: "docker-compose.prod.yml — RADA API + Postgres + Redis only"
+    status: completed
+    priority: p1
+    area: infra
+    milestone: "RADA-Runtime — Standalone compose"
+    due: 2026-07-22
+    labels:
+      - "sprint/RADA-Runtime"
+      - "area/infra"
+      - "type/infra"
+      - "priority/p1"
+    depends_on:
+      - RT-01
+    acceptance:
+      - "No sibling repos required; mock reasoner default"
+      - "Resource limits, restart policies, healthchecks"
+    artifacts:
+      - "docker-compose.prod.yml"
+      - "runtime/compose/docker-compose.prod.yml"
+
+  - id: RT-03
+    title: "LLM sidecar profile — vLLM or mock reasoner via env"
+    status: completed
+    priority: p2
+    area: infra
+    milestone: "RADA-Runtime — LLM profile"
+    due: 2026-07-25
+    labels:
+      - "sprint/RADA-Runtime"
+      - "area/infra"
+      - "type/infra"
+      - "priority/p2"
+    depends_on:
+      - RT-02
+    acceptance:
+      - "PROFILE=mock|vllm switches compose overlay"
+      - "Mock works without GPU or external keys"
+    artifacts:
+      - "runtime/profiles/llm-mock.yml"
+      - "runtime/profiles/llm-vllm.yml"
+
+  - id: RT-04
+    title: "OPT-INTEG-TW — optional TailWarp sidecar profile (deferred v2.0)"
+    status: deferred
+    priority: p3
+    area: adapters
+    milestone: "RADA-Runtime — Optional sidecar"
+    due: 2026-09-01
+    labels:
+      - "sprint/RADA-Runtime"
+      - "area/adapters"
+      - "type/infra"
+      - "priority/p3"
+      - "opt-in/integration"
+    depends_on:
+      - RT-02
+    note: "Requires tail-warp pip package installed separately. Not v1.0. OPT-INTEG v2.0 — sync skips GitHub issue creation."
+    acceptance:
+      - "runtime/profiles/tailwarp-sidecar.yml documented"
+      - "TAILWARP_URL env; falls back to rada.calc when absent"
+    artifacts:
+      - "runtime/profiles/tailwarp-sidecar.yml"
+
+  - id: RT-05
+    title: "OPT-INTEG-SR — optional scenario service URL profile (deferred v2.0)"
+    status: deferred
+    priority: p3
+    area: adapters
+    milestone: "RADA-Runtime — Optional sidecar"
+    due: 2026-09-01
+    labels:
+      - "sprint/RADA-Runtime"
+      - "area/adapters"
+      - "type/infra"
+      - "priority/p3"
+      - "opt-in/integration"
+    depends_on:
+      - RT-02
+    note: "Requires scenario-reasoner-lm SP-SERVE deployed separately. Not v1.0. OPT-INTEG v2.0 — sync skips GitHub issue creation."
+    acceptance:
+      - "SCENARIO_SERVICE_URL env profile documented"
+    artifacts:
+      - "runtime/profiles/scenario-sidecar.yml"
+
+  - id: RT-06
+    title: "POST /analyze unified external API — routes to RADA decision_loop only"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "RADA-Runtime — API"
+    due: 2026-07-29
+    labels:
+      - "sprint/RADA-Runtime"
+      - "area/backend"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - RT-02
+      - SP-CALC-03
+    acceptance:
+      - "Single entrypoint on FastAPI app"
+      - "Returns decision + audit trace ids"
+      - "No hard dependency on external scenario or tailwarp services"
+    artifacts:
+      - "src/rada/api/analyze.py"
+
+  - id: RT-07
+    title: "Standalone integration smoke — compose up, shock fixture, audit trace"
+    status: completed
+    priority: p1
+    area: tests
+    milestone: "RADA-Runtime — Smoke"
+    due: 2026-08-04
+    labels:
+      - "sprint/RADA-Runtime"
+      - "area/tests"
+      - "type/test"
+      - "priority/p1"
+    depends_on:
+      - RT-06
+      - SP-AUDIT-02
+    acceptance:
+      - "tests/integration/test_runtime_smoke.py or script"
+      - "No external repos in CI job"
+    artifacts:
+      - "tests/integration/test_runtime_smoke.py"
+
+  - id: RT-08
+    title: "docs/runtime.md — operator guide; optional profiles in appendix"
+    status: completed
+    priority: p2
+    area: docs
+    milestone: "RADA-Runtime — Docs"
+    due: 2026-08-07
+    labels:
+      - "sprint/RADA-Runtime"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p2"
+    depends_on:
+      - RT-07
+    acceptance:
+      - "Standalone deploy steps first"
+      - "OPT-INTEG sidecars in separate section"
+    artifacts:
+      - "docs/runtime.md"

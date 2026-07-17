@@ -1,0 +1,96 @@
+# S7 — Simulation core (post-MVP). MarketSimulation, vectorized env, game theory stubs.
+---
+version: 2
+archived: true
+sprint: S7
+sprint_start: 2026-09-26
+sprint_target_end: 2026-10-23
+repo: artaasd95/RADA
+issues:
+  - id: S7-01
+    title: "Causal MarketSimulation module"
+    status: completed
+    priority: p2
+    area: search
+    milestone: "R6 — Data & search"
+    due: 2026-10-03
+    labels:
+      - "sprint/S7"
+      - "ws5:search"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S6-04
+    acceptance:
+      - "src/rada/search/simulation.py generates shock scenarios with configurable causality"
+      - "Outputs compatible with MarketEvent stream for replay into decision_loop"
+      - "Unit tests on known shock fixtures"
+    artifacts:
+      - "src/rada/search/simulation.py"
+      - "tests/unit/test_market_simulation.py"
+
+  - id: S7-02
+    title: "Vectorized Gymnasium environment behind BaseSearchEnv"
+    status: completed
+    priority: p2
+    area: search
+    milestone: "R6 — Data & search"
+    due: 2026-10-10
+    labels:
+      - "sprint/S7"
+      - "ws5:search"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S7-01
+    acceptance:
+      - "src/rada/search/vectorized_env.py supports batched parallel episodes"
+      - "Implements BaseSearchEnv contract from S1 interfaces"
+      - "Smoke test runs 100 parallel episodes without external broker"
+    artifacts:
+      - "src/rada/search/vectorized_env.py"
+      - "tests/unit/test_vectorized_env.py"
+    note: "Delivered as custom asyncio VectorizedSearchEnv (not Gymnasium). Gymnasium/Ray remain optional future paths; 100-episode smoke in test_vectorized_env.py."
+
+  - id: S7-03
+    title: "Game-theoretic search and uncertainty quantification stubs"
+    status: completed
+    priority: p2
+    area: search
+    milestone: "R6 — Data & search"
+    due: 2026-10-17
+    labels:
+      - "sprint/S7"
+      - "ws5:search"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S7-02
+    acceptance:
+      - "src/rada/search/game_theory.py Nash-style spread search stub"
+      - "src/rada/search/uncertainty.py conformal or interval stubs on action size"
+      - "JSON-serializable outputs for dashboard consumption"
+    artifacts:
+      - "src/rada/search/game_theory.py"
+      - "src/rada/search/uncertainty.py"
+
+  - id: S7-04
+    title: "Simulation layer integration test"
+    status: completed
+    priority: p2
+    area: search
+    milestone: "R6 — Data & search"
+    due: 2026-10-23
+    labels:
+      - "sprint/S7"
+      - "ws5:search"
+      - "type/test"
+      - "priority/p2"
+    depends_on:
+      - S7-03
+    acceptance:
+      - "Integration test: MarketSimulation → vectorized env → sample action batch"
+      - "Documented in docs/search.md"
+    artifacts:
+      - "tests/integration/test_simulation_layer.py"
+      - "docs/search.md"

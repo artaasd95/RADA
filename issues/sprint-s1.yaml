@@ -1,0 +1,162 @@
+# Canonical machine-readable issue seeds for RADA (S1 — Skeleton & Contracts).
+# Edits here drive GitHub issue sync (.github/workflows/rada-sync-issues.yml).
+# Status: `ongoing` (open issue), `completed` (close issue). Omit = ongoing.
+# Set `status: completed` to close an existing seeded GitHub issue during sync.
+# Human narrative: ../Action-Queue.md, ../Roadmap.md.
+# MVP horizon: 90 days. Third-party adapters out of scope for S1.
+---
+version: 2
+archived: true
+sprint: S1
+sprint_start: 2026-05-29
+sprint_target_end: 2026-06-11
+repo: artaasd95/RADA
+issues:
+  - id: S1-01
+    title: "Initialize RADA repo layout, pyproject.toml, and dev tooling"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R1 — Skeleton boots"
+    due: 2026-06-02
+    labels:
+      - "sprint/S1"
+      - "ws1:core"
+      - "type/chore"
+      - "priority/p1"
+    depends_on: []
+    acceptance:
+      - "src/rada/ package with __init__.py, main.py stub, configs/dev.yaml"
+      - "pyproject.toml declares FastAPI, pydantic, asyncio, redis, postgres client deps"
+      - "README skeleton points to architecture and non-goals (no live trading)"
+      - "pytest and ruff configured; empty test pass"
+      - "samples/github-actions/README.md documents sample CI/lint YAML (not enabled on repo)"
+      - "No .github/workflows/ in RADA repo — Actions deferred to post-MVP"
+    artifacts:
+      - "pyproject.toml"
+      - "src/rada/__init__.py"
+      - "configs/dev.yaml"
+      - "README.md"
+      - "samples/github-actions/README.md"
+
+  - id: S1-02
+    title: "Define core Pydantic schemas (MarketEvent, Decision, ProposedAction, DecisionTrace)"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R1 — Skeleton boots"
+    due: 2026-06-04
+    labels:
+      - "sprint/S1"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S1-01
+    acceptance:
+      - "src/rada/schemas.py exports ActionDirection, MarketEvent, DecisionTrace, ProposedAction, Decision"
+      - "JSON schema round-trip tests for each model"
+      - "utc_datetime typing documented for Decision.timestamp"
+    artifacts:
+      - "src/rada/schemas.py"
+      - "tests/unit/test_schemas.py"
+
+  - id: S1-03
+    title: "Define abstract interfaces (reasoner, risk, policy, auditor, data_store, search_env)"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R1 — Skeleton boots"
+    due: 2026-06-06
+    labels:
+      - "sprint/S1"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S1-02
+    acceptance:
+      - "src/rada/interfaces/ contains BaseReasoner, BaseRiskOptimizer, BasePolicy, BaseAuditor, BaseDataStore, BaseSearchEnv"
+      - "Each interface documents inputs/outputs using schemas from schemas.py"
+      - "Stub implementations in tests prove interface contract without third-party deps"
+    artifacts:
+      - "src/rada/interfaces/reasoner.py"
+      - "src/rada/interfaces/risk.py"
+      - "src/rada/interfaces/policy.py"
+      - "src/rada/interfaces/auditor.py"
+      - "src/rada/interfaces/data_store.py"
+      - "src/rada/interfaces/search_env.py"
+
+  - id: S1-04
+    title: "Add docker-compose.yml for Redis event bus and Postgres decisions DB"
+    status: completed
+    priority: p1
+    area: infra
+    milestone: "R1 — Skeleton boots"
+    due: 2026-06-08
+    labels:
+      - "sprint/S1"
+      - "ws2:infra"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S1-01
+    acceptance:
+      - "docker-compose.yml spins Redis and Postgres with healthchecks"
+      - "configs/dev.yaml documents connection URLs and env var names"
+      - ".env.example lists required secrets (no real credentials)"
+      - "make up / documented command brings stack up locally in under 60s"
+    artifacts:
+      - "docker-compose.yml"
+      - ".env.example"
+      - "configs/dev.yaml"
+
+  - id: S1-05
+    title: "Implement fake market ingest and async event bus entrypoint"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R1 — Skeleton boots"
+    due: 2026-06-10
+    labels:
+      - "sprint/S1"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S1-02
+      - S1-04
+    acceptance:
+      - "src/rada/data/ingestion.py yields synthetic MarketEvent async generator"
+      - "main.py FastAPI/asyncio entrypoint enqueues events (Redis or in-memory fallback)"
+      - "Integration smoke test runs ingest for N events without external broker"
+    artifacts:
+      - "src/rada/data/ingestion.py"
+      - "src/rada/main.py"
+      - "tests/integration/test_fake_ingest.py"
+
+  - id: S1-06
+    title: "Scaffold decision_loop stub that logs empty decision to Postgres"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R1 — Skeleton boots"
+    due: 2026-06-11
+    labels:
+      - "sprint/S1"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S1-03
+      - S1-05
+    acceptance:
+      - "src/rada/core/decision_loop.py consumes one MarketEvent and emits Decision with placeholder trace"
+      - "Decision persisted to Postgres (or sqlite fallback in local test) with immutable decision_id"
+      - "Milestone demo: boot → ingest fake data → log one empty decision → exit 0"
+      - "Unit test covers loop with stub reasoner/risk/policy (no third-party packages)"
+    artifacts:
+      - "src/rada/core/decision_loop.py"
+      - "src/rada/data/storage.py"
+      - "tests/unit/test_decision_loop.py"
+      - "tests/integration/test_boot_milestone.py"

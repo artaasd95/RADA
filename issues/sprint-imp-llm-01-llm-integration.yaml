@@ -1,0 +1,267 @@
+version: 2
+archived: true
+sprint: IMP-LLM-01
+sprint_start: 2026-06-17
+sprint_target_end: 2026-07-29
+repo: artaasd95/RADA
+issues:
+- id: IMP-LLM-01-01
+  title: Define LLMProvider interface and config schema
+  status: completed
+  priority: p0
+  area: architecture
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-06-24
+  labels:
+  - sprint/IMP-LLM-01
+  - area/architecture
+  - type/feature
+  - priority/p0
+  depends_on: []
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+  acceptance:
+  - src/rada/llm_integration/base.py defines LLMProvider ABC with complete(prompt,
+    model_id, **kwargs) -> Completion
+  - Completion dataclass includes text, token_usage, latency_ms, backend_id, tool_calls
+    (optional)
+  - src/rada/llm_integration/config.py defines LLMConfig with provider field (vllm,
+    ray_serve, litellm, ollama, custom)
+  - Unit tests for interface contract
+  artifacts:
+  - src/rada/llm_integration/__init__.py
+  - src/rada/llm_integration/base.py
+  - src/rada/llm_integration/config.py
+  - tests/unit/test_llm_provider_interface.py
+- id: IMP-LLM-01-02
+  title: Implement VLLMAdapter (single GPU, self-hosted)
+  status: completed
+  priority: p0
+  area: backend
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-07-01
+  labels:
+  - sprint/IMP-LLM-01
+  - area/backend
+  - type/feature
+  - priority/p0
+  depends_on:
+  - IMP-LLM-01-01
+  acceptance:
+  - src/rada/llm_integration/adapters/vllm_adapter.py implements VLLMAdapter(LLMProvider)
+  - Adapter wraps vLLM OpenAI-compatible API (localhost:8000)
+  - Supports model_path, dtype, gpu_memory_utilization config
+  - 'Integration test: start local vLLM server, call adapter, verify response'
+  - 'Config example: configs/llm_single_gpu.yaml'
+  artifacts:
+  - src/rada/llm_integration/adapters/vllm_adapter.py
+  - configs/llm_single_gpu.yaml
+  - tests/integration/test_vllm_adapter.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: IMP-LLM-01-03
+  title: Implement RayServeLLMAdapter (multi-GPU, autoscaling)
+  status: completed
+  priority: p1
+  area: backend
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-07-08
+  labels:
+  - sprint/IMP-LLM-01
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - IMP-LLM-01-01
+  acceptance:
+  - src/rada/llm_integration/adapters/ray_serve_adapter.py implements RayServeLLMAdapter(LLMProvider)
+  - Supports multi-replica deployment, num_gpus_per_replica, lora_config
+  - 'Config example: configs/llm_distributed.yaml'
+  - Mock/stub version works without Ray cluster for testing
+  - 'Unit tests: config parsing, deployment logic'
+  artifacts:
+  - src/rada/llm_integration/adapters/ray_serve_adapter.py
+  - configs/llm_distributed.yaml
+  - tests/unit/test_ray_serve_adapter.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: IMP-LLM-01-04
+  title: 'Implement LiteLLMAdapter (cloud LLMs: OpenAI, Claude, Gemini, etc.)'
+  status: completed
+  priority: p1
+  area: backend
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-07-08
+  labels:
+  - sprint/IMP-LLM-01
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - IMP-LLM-01-01
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+  acceptance:
+  - src/rada/llm_integration/adapters/litellm_adapter.py implements LiteLLMAdapter(LLMProvider)
+  - Supports default_model, fallback_models, api_keys config
+  - 'Config example: configs/llm_cloud.yaml with OpenAI, Claude, Gemini examples'
+  - Retry logic and fallback routing tested
+  - 'Unit tests: config parsing, API key handling, fallback logic'
+  artifacts:
+  - src/rada/llm_integration/adapters/litellm_adapter.py
+  - configs/llm_cloud.yaml
+  - tests/unit/test_litellm_adapter.py
+- id: IMP-LLM-01-05
+  title: Implement OllamaAdapter (lightweight local inference)
+  status: completed
+  priority: p1
+  area: backend
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-07-08
+  labels:
+  - sprint/IMP-LLM-01
+  - area/backend
+  - type/feature
+  - priority/p1
+  depends_on:
+  - IMP-LLM-01-01
+  acceptance:
+  - src/rada/llm_integration/adapters/ollama_adapter.py implements OllamaAdapter(LLMProvider)
+  - 'Supports base_url, model config (default: qwen:7b)'
+  - 'Config example: configs/llm_ollama.yaml'
+  - 'Integration test: verify Ollama server connectivity'
+  - 'Unit tests: config parsing, request formatting'
+  artifacts:
+  - src/rada/llm_integration/adapters/ollama_adapter.py
+  - configs/llm_ollama.yaml
+  - tests/integration/test_ollama_adapter.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: IMP-LLM-01-06
+  title: Implement CustomAdapter template (BYOK — bring your own inference)
+  status: completed
+  priority: p2
+  area: backend
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-07-15
+  labels:
+  - sprint/IMP-LLM-01
+  - area/backend
+  - type/feature
+  - priority/p2
+  depends_on:
+  - IMP-LLM-01-01
+  acceptance:
+  - src/rada/llm_integration/adapters/custom_adapter.py provides template for custom
+    LLM backends
+  - 'Example: custom internal service with fallback to cloud provider'
+  - 'Config example: configs/llm_custom.yaml'
+  - Docstring and comments explain extension points
+  artifacts:
+  - src/rada/llm_integration/adapters/custom_adapter.py
+  - configs/llm_custom.yaml
+  - src/rada/llm_integration/adapters/README_CUSTOM.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: IMP-LLM-01-07
+  title: Create factory function and config loader
+  status: completed
+  priority: p0
+  area: backend
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-07-15
+  labels:
+  - sprint/IMP-LLM-01
+  - area/backend
+  - type/feature
+  - priority/p0
+  depends_on:
+  - IMP-LLM-01-01
+  acceptance:
+  - 'src/rada/llm_integration/factory.py implements create_llm_provider(config_path:
+    str) -> LLMProvider'
+  - Supports YAML config files (llm_*.yaml)
+  - Factory returns appropriate adapter based on config.provider field
+  - Clear error messages if config malformed or provider not found
+  - 'Unit tests: all provider types, error cases'
+  artifacts:
+  - src/rada/llm_integration/factory.py
+  - tests/unit/test_factory.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: IMP-LLM-01-08
+  title: Integrate LLMProvider into DecisionLoop and ReasonerLoop
+  status: completed
+  priority: p0
+  area: backend
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-07-22
+  labels:
+  - sprint/IMP-LLM-01
+  - area/backend
+  - type/feature
+  - priority/p0
+  depends_on:
+  - IMP-LLM-01-07
+  acceptance:
+  - src/rada/core/decision_loop.py uses injected LLMProvider instead of hardcoded
+    backend
+  - src/rada/core/reasoner_loop.py uses injected LLMProvider
+  - 'Factory pattern in main.py: `llm_provider = create_llm_provider(config_path)`'
+  - 'Integration test: decision pipeline runs with different adapters (vLLM, mock,
+    etc.)'
+  - No changes to decision logic; LLM integration is orthogonal
+  artifacts:
+  - src/rada/core/decision_loop.py (modified)
+  - src/rada/core/reasoner_loop.py (modified)
+  - src/rada/main.py (modified)
+  - tests/integration/test_decision_loop_with_adapters.py
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: IMP-LLM-01-09
+  title: Add comprehensive config examples and README
+  status: completed
+  priority: p1
+  area: docs
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-07-29
+  labels:
+  - sprint/IMP-LLM-01
+  - area/docs
+  - type/feature
+  - priority/p1
+  depends_on:
+  - IMP-LLM-01-08
+  acceptance:
+  - docs/llm-integration.md explains architecture, adapter options, deployment scenarios
+  - 'Deployment guide: dev (vLLM/Ollama), single GPU, multi-GPU (Ray), cloud (liteLLM),
+    custom (BYOK)'
+  - 'Getting-started: run decision loop with each adapter type'
+  - 'FAQ: liteLLM required?, custom implementation?, framework lock-in?'
+  - Config examples for all deployment scenarios in configs/
+  artifacts:
+  - docs/llm-integration.md
+  - configs/llm_*.yaml (all examples)
+  - docs/deployment-guide.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: IMP-LLM-01-10
+  title: Unit and integration tests for all adapters
+  status: completed
+  priority: p1
+  area: testing
+  milestone: IMP-LLM-01 - LLM Integration
+  due: 2026-07-29
+  labels:
+  - sprint/IMP-LLM-01
+  - area/testing
+  - type/test
+  - priority/p1
+  depends_on:
+  - IMP-LLM-01-02
+  - IMP-LLM-01-03
+  - IMP-LLM-01-04
+  - IMP-LLM-01-05
+  - IMP-LLM-01-06
+  acceptance:
+  - Unit tests for config loading, adapter instantiation, error handling
+  - Mock tests for each adapter (no external services required)
+  - 'Integration tests: vLLM server (optional), Ollama server (optional)'
+  - 'Test coverage: ≥80% for llm_integration module'
+  - CI workflow runs unit tests on every push
+  artifacts:
+  - tests/unit/test_llm_*.py
+  - tests/integration/test_llm_*.py
+  - .github/workflows/test_llm_integration.yml (optional)
+  note: Completed 2026-06-11 on develop (portfolio execution plan).

@@ -1,0 +1,50 @@
+version: 2
+archived: true
+sprint: SP-WIRE
+sprint_start: 2026-06-06
+sprint_target_end: 2026-06-27
+repo: artaasd95/RADA
+issues:
+- id: SP-WIRE-EXPORT-01
+  title: export_reflection.py --from-db reads TimescaleDecisionStore (not synthetic-only)
+  status: completed
+  priority: p1
+  area: data
+  milestone: SP-WIRE — Export pipeline
+  due: 2026-06-20
+  labels:
+  - sprint/SP-WIRE
+  - area/data
+  - type/feature
+  - priority/p1
+  depends_on:
+  - S6-08
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+  acceptance:
+  - --from-db flag reads decisions from configured store
+  - Produces same JSONL schema as synthetic path
+  - Integration test with SQLite or in-memory store
+  artifacts:
+  - scripts/export_reflection.py
+  - tests/integration/test_export_from_db.py
+- id: SP-WIRE-EXPORT-02
+  title: Wire Decision.outcome field + export filter require_outcome
+  status: completed
+  priority: p2
+  area: data
+  milestone: SP-WIRE — Export pipeline
+  due: 2026-06-24
+  labels:
+  - sprint/SP-WIRE
+  - area/data
+  - type/feature
+  - priority/p2
+  depends_on:
+  - SP-WIRE-EXPORT-01
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+  acceptance:
+  - Decision.outcome populated in reflection path stub
+  - configs/data/export.yaml require_outcome filter enforced
+  artifacts:
+  - src/rada/schemas.py
+  - src/rada/data/pipeline/runner.py

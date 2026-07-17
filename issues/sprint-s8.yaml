@@ -1,0 +1,97 @@
+# S8 — Search algorithms (post-MVP). MCTS, hybrid search, risk-constrained selection.
+---
+version: 2
+archived: true
+sprint: S8
+sprint_start: 2026-10-24
+sprint_target_end: 2026-11-20
+repo: artaasd95/RADA
+issues:
+  - id: S8-01
+    title: "MCTS and hybrid search (policy + simulation + risk optimizer)"
+    status: completed
+    priority: p2
+    area: search
+    milestone: "R6 — Data & search"
+    due: 2026-10-31
+    labels:
+      - "sprint/S8"
+      - "ws5:search"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S7-04
+    acceptance:
+      - "src/rada/search/mcts.py implements MCTS with policy proposals from Trinity stub"
+      - "Risk optimizer consulted at expansion or rollout per design doc"
+      - "Benchmark on small fixture completes in documented time budget"
+    artifacts:
+      - "src/rada/search/mcts.py"
+      - "tests/unit/test_mcts.py"
+
+  - id: S8-02
+    title: "Risk-constrained action selection in search loop"
+    status: completed
+    priority: p2
+    area: search
+    milestone: "R6 — Data & search"
+    due: 2026-11-07
+    labels:
+      - "sprint/S8"
+      - "ws5:search"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S8-01
+    acceptance:
+      - "Search selects actions satisfying CVaR constraint from TailWarp adapter"
+      - "Infeasible branches pruned or downgraded per Decision-Log risk policy"
+      - "Unit tests on constraint fixtures"
+    artifacts:
+      - "src/rada/search/risk_selection.py"
+      - "tests/unit/test_risk_selection.py"
+
+  - id: S8-03
+    title: "Search evaluation framework and benchmarks"
+    status: completed
+    priority: p2
+    area: search
+    milestone: "R6 — Data & search"
+    due: 2026-11-14
+    labels:
+      - "sprint/S8"
+      - "ws5:search"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S8-02
+    acceptance:
+      - "src/rada/search/eval.py reports regret, CVaR breach rate, faithfulness correlation"
+      - "scripts/benchmark_search.py outputs JSON summary for regression tracking"
+      - "Baseline vs MCTS comparison on documented fixture set"
+    artifacts:
+      - "src/rada/search/eval.py"
+      - "scripts/benchmark_search.py"
+      - "benchmarks/search/"
+
+  - id: S8-04
+    title: "Search algorithms documentation and examples"
+    status: completed
+    priority: p3
+    area: docs
+    milestone: "R6 — Data & search"
+    due: 2026-11-20
+    labels:
+      - "sprint/S8"
+      - "ws5:search"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p3"
+    depends_on:
+      - S8-03
+    acceptance:
+      - "docs/search-algorithms.md explains MCTS + risk gate interaction"
+      - "Notebook or script example runs end-to-end search on toy market"
+    artifacts:
+      - "docs/search-algorithms.md"
+      - "examples/search_demo.py"
