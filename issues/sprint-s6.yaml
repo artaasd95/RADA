@@ -1,0 +1,192 @@
+# S6 — Data foundation (post-MVP). Kafka/ZeroMQ, TimescaleDB, analytics, lineage.
+---
+version: 2
+archived: true
+sprint: S6
+sprint_start: 2026-08-29
+sprint_target_end: 2026-09-25
+repo: artaasd95/RADA
+issues:
+  - id: S6-01
+    title: "Kafka or ZeroMQ ingest pipeline behind async interface"
+    status: completed
+    priority: p2
+    area: data
+    milestone: "R6 — Data & search"
+    due: 2026-09-05
+    labels:
+      - "sprint/S6"
+      - "ws4:data"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S5-05
+    acceptance:
+      - "src/rada/data/bus.py abstracts Redis / Kafka / ZeroMQ backends"
+      - "Fake ingest runnable through new bus without API change to decision_loop"
+      - "docker-compose overlay documents optional Kafka or ZeroMQ service"
+    artifacts:
+      - "src/rada/data/bus.py"
+      - "docker-compose.data.yml"
+
+  - id: S6-02
+    title: "TimescaleDB schema for market_events and decision_traces"
+    status: completed
+    priority: p2
+    area: data
+    milestone: "R6 — Data & search"
+    due: 2026-09-12
+    labels:
+      - "sprint/S6"
+      - "ws4:data"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S6-01
+    acceptance:
+      - "Hypertables or partitioned tables for time-series market_events and decision_traces"
+      - "Migration scripts from plain Postgres S1 schema"
+      - "BaseDataStore implementation supports Timescale path"
+    artifacts:
+      - "migrations/timescale/"
+      - "src/rada/data/timescale_store.py"
+
+  - id: S6-03
+    title: "Real-time P&L analytics stubs and data quality hooks"
+    status: completed
+    priority: p2
+    area: data
+    milestone: "R6 — Data & search"
+    due: 2026-09-18
+    labels:
+      - "sprint/S6"
+      - "ws4:data"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S6-02
+    acceptance:
+      - "src/rada/data/analytics.py computes rolling P&L stubs from Decision outcomes"
+      - "src/rada/data/quality.py lineage hooks on ingest (source, timestamp, checksum)"
+      - "Unit tests on synthetic event stream"
+    artifacts:
+      - "src/rada/data/analytics.py"
+      - "src/rada/data/quality.py"
+      - "tests/unit/test_data_quality.py"
+
+  - id: S6-04
+    title: "Data layer integration test and compose overlay"
+    status: completed
+    priority: p2
+    area: data
+    milestone: "R6 — Data & search"
+    due: 2026-09-25
+    labels:
+      - "sprint/S6"
+      - "ws4:data"
+      - "type/test"
+      - "priority/p2"
+    depends_on:
+      - S6-03
+    acceptance:
+      - "Integration test: bus ingest → Timescale persist → analytics read"
+      - "docker compose -f docker-compose.yml -f docker-compose.data.yml documented"
+    artifacts:
+      - "tests/integration/test_data_layer.py"
+      - "docker-compose.data.yml"
+
+  - id: S6-05
+    title: "Publish docs/data-platform.md — usage and export modes"
+    status: completed
+    priority: p2
+    area: data
+    milestone: "R6 — Data & search"
+    due: 2026-09-28
+    labels:
+      - "sprint/S6"
+      - "ws4:data"
+      - "type/docs"
+      - "priority/p2"
+    depends_on:
+      - S6-04
+    acceptance:
+      - "docs/data-platform.md copied from vault Projects/RADA/Data-Platform.md"
+      - "configs/data/usage.yaml and export.yaml examples from spec"
+      - "Documents usage vs export modes; RADA does not own train/eval splits"
+      - "Architecture.md links to docs/data-platform.md"
+    artifacts:
+      - "docs/data-platform.md"
+      - "configs/data/usage.yaml"
+      - "configs/data/export.yaml"
+
+  - id: S6-06
+    title: "Data pipeline config loader and usage/export stage runners"
+    status: completed
+    priority: p2
+    area: data
+    milestone: "R6 — Data & search"
+    due: 2026-10-05
+    labels:
+      - "sprint/S6"
+      - "ws4:data"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S6-05
+    acceptance:
+      - "src/rada/data/pipeline/config.py loads PipelineConfig for mode usage|export"
+      - "usage runner: stream/file → normalize(MarketEvent) → lineage hooks → hot/warm sinks"
+      - "export runner: db → DecisionExportRow → file sinks"
+      - "Integrates with existing bus.py and quality.py without breaking decision_loop"
+      - "Unit tests on synthetic configs"
+    artifacts:
+      - "src/rada/data/pipeline/"
+      - "tests/unit/test_rada_pipeline_config.py"
+
+  - id: S6-07
+    title: "FeedbackRecord card and cross-repo export validation"
+    status: completed
+    priority: p2
+    area: data
+    milestone: "R6 — Data & search"
+    due: 2026-10-12
+    labels:
+      - "sprint/S6"
+      - "ws4:data"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S6-06
+    acceptance:
+      - "src/rada/data/cards/feedback_record.py matches portfolio FeedbackRecord contract"
+      - "src/rada/data/cards/decision_export.py for batch reflection rows"
+      - "Export sink validates FeedbackRecord before write to feedback/outgoing/"
+      - "Documented consumers: raft-lm, scenario-reasoner-lm apply_feedback"
+      - "Unit tests on valid/invalid feedback fixtures"
+    artifacts:
+      - "src/rada/data/cards/"
+      - "tests/unit/test_feedback_export_cards.py"
+
+  - id: S6-08
+    title: "scripts/export_reflection.py batch CLI and integration test"
+    status: completed
+    priority: p2
+    area: data
+    milestone: "R6 — Data & search"
+    due: 2026-10-19
+    labels:
+      - "sprint/S6"
+      - "ws4:data"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S6-07
+    acceptance:
+      - "scripts/export_reflection.py --config configs/data/export.yaml"
+      - "Reads action DB; writes reflection JSONL and feedback/outgoing JSONL"
+      - "Off hot path — no change to decision_loop latency"
+      - "Integration test: synthetic decisions → export → valid FeedbackRecord output"
+      - "Documented in docs/data-platform.md and operator runbook"
+    artifacts:
+      - "scripts/export_reflection.py"
+      - "tests/integration/test_export_reflection.py"

@@ -1,0 +1,27 @@
+# P0-CKPT — Checkpoint save/resume blockers for RunPod reflection training.
+---
+version: 2
+archived: true
+sprint: P0-CKPT
+sprint_start: 2026-06-08
+sprint_target_end: 2026-06-15
+repo: artaasd95/RADA
+issues:
+  - id: P0-CKPT-01
+    title: "Fix UnslothTrainer TrainingArguments + extend TrainingConfig for checkpoint resume"
+    status: completed
+    priority: p0
+    area: training
+    milestone: "P0-CKPT — RunPod checkpoint blockers"
+    due: 2026-06-10
+    labels:
+      - "sprint/P0-CKPT"
+      - "area/training"
+      - "type/bug"
+      - "priority/p0"
+    acceptance:
+      - "save_strategy=steps with save_steps, save_total_limit, resume_from_checkpoint"
+      - "TrainingConfig adds checkpoint_interval, checkpoint_keep_last, resume_from"
+    artifacts:
+      - "src/rada/training/unsloth_trainer.py"
+      - "src/rada/training/config.py"

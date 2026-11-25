@@ -1,0 +1,51 @@
+# SP-RUNPOD — RunPod execution layer for reflection training.
+---
+version: 2
+archived: true
+sprint: SP-RUNPOD
+sprint_start: 2026-06-08
+sprint_target_end: 2026-06-22
+repo: artaasd95/RADA
+issues:
+  - id: RUNPOD-01
+    title: "runpod/train.py — wraps reflection_train.py, tmux-safe"
+    status: completed
+    priority: p0
+    area: infra
+    artifacts: ["runpod/train.py"]
+    labels: ["sprint/SP-RUNPOD", "area/infra", "priority/p0"]
+  - id: RUNPOD-02
+    title: "runpod/setup.sh"
+    status: completed
+    priority: p0
+    area: infra
+    artifacts: ["runpod/setup.sh"]
+    labels: ["sprint/SP-RUNPOD", "area/infra", "priority/p0"]
+  - id: RUNPOD-03
+    title: "runpod/resume.sh"
+    status: completed
+    priority: p0
+    area: infra
+    artifacts: ["runpod/resume.sh"]
+    labels: ["sprint/SP-RUNPOD", "area/infra", "priority/p0"]
+  - id: RUNPOD-04
+    title: "runpod/config.yaml"
+    status: completed
+    priority: p1
+    area: infra
+    artifacts: ["runpod/config.yaml"]
+    labels: ["sprint/SP-RUNPOD", "area/infra", "priority/p1"]
+  - id: RUNPOD-05
+    title: "runpod/notebook_runpod.ipynb"
+    status: completed
+    priority: p2
+    area: infra
+    artifacts: ["runpod/notebook_runpod.ipynb"]
+    labels: ["sprint/SP-RUNPOD", "area/infra", "priority/p2"]
+  - id: RUNPOD-06
+    title: "runpod/README.md"
+    status: completed
+    priority: p1
+    area: docs
+    artifacts: ["runpod/README.md"]
+    labels: ["sprint/SP-RUNPOD", "area/docs", "priority/p1"]

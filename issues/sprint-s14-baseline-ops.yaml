@@ -1,0 +1,54 @@
+# Sprint S14 - Local baseline first, then unified experiment ops for RunPod and remote storage.
+---
+version: 2
+archived: true
+sprint: S14
+sprint_start: 2026-06-10
+sprint_target_end: 2026-06-24
+sprint_completed: 2026-06-13
+repo: artaasd95/RADA
+issues:
+  - id: S14-01
+    note: "Completed 2026-06-13 on develop (commit 584d4cd, Qwen3-0.6B baseline frozen)."
+    title: "Freeze local reflection baseline around Qwen3-0.6B with one canonical pre/post eval bundle"
+    status: completed
+    priority: p0
+    area: training
+    labels: ["sprint/S14", "area/training", "priority/p0"]
+    artifacts: ["configs/models/qwen_portfolio.yaml", "scripts/compare_pre_post_train.py", "experiments/"]
+  - id: S14-02
+    note: "Completed 2026-06-13 on develop (commit 584d4cd, artifact root unified)."
+    title: "Unify artifact root for adapters, eval outputs, manifests, and exported training data"
+    status: completed
+    priority: p0
+    area: data
+    labels: ["sprint/S14", "area/data", "priority/p0"]
+    depends_on: [S14-01]
+    artifacts: ["benchmarks/baseline_frozen_qwen3_0.6b_run_001.json", "benchmarks/baseline_qwen3_0.6b_artifacts/", "scripts/verify_baseline_operations.py"]
+  - id: S14-03
+    note: "Completed 2026-06-13 on develop (commit 584d4cd, RunPod parity tracking ready)."
+    title: "Add bucket-native plus volume-aware remote sync for adapters and eval artifacts"
+    status: completed
+    priority: p1
+    area: infra
+    labels: ["sprint/S14", "area/infra", "priority/p1"]
+    depends_on: [S14-02]
+    artifacts: ["storage/ftp_sync.py", "storage/README.md", "runpod/verify_parity.py"]
+  - id: S14-04
+    note: "Completed 2026-06-13 on develop (commit 584d4cd, RunPod resume semantics documented)."
+    title: "Make RunPod notebook and CLI emit the same artifact layout and resume semantics"
+    status: completed
+    priority: p1
+    area: infra
+    labels: ["sprint/S14", "area/infra", "priority/p1"]
+    depends_on: [S14-02]
+    artifacts: ["runpod/notebook_runpod.ipynb", "runpod/train.py", "BASELINE_OPERATIONS_GUIDE.md"]
+  - id: S14-05
+    note: "Completed 2026-06-13 on develop (commit 584d4cd, observability complete)."
+    title: "Add structured train/eval manifest logging next to runtime observability"
+    status: completed
+    priority: p1
+    area: observability
+    labels: ["sprint/S14", "area/observability", "priority/p1"]
+    depends_on: [S14-01, S14-02]
+    artifacts: ["src/rada/observability/", "docs/training.md"]

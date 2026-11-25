@@ -1,0 +1,37 @@
+# SP-STORAGE — FTP sync utility triggered at 80% disk.
+---
+version: 2
+archived: true
+sprint: SP-STORAGE
+sprint_start: 2026-06-08
+sprint_target_end: 2026-06-22
+repo: artaasd95/RADA
+issues:
+  - id: STOR-01
+    title: "storage/ftp_sync.py"
+    status: completed
+    priority: p0
+    area: infra
+    artifacts: ["storage/ftp_sync.py"]
+    labels: ["sprint/SP-STORAGE", "area/infra", "priority/p0"]
+  - id: STOR-02
+    title: "storage/disk_monitor.py"
+    status: completed
+    priority: p0
+    area: infra
+    artifacts: ["storage/disk_monitor.py"]
+    labels: ["sprint/SP-STORAGE", "area/infra", "priority/p0"]
+  - id: STOR-03
+    title: "storage/sync_daemon.sh"
+    status: completed
+    priority: p1
+    area: infra
+    artifacts: ["storage/sync_daemon.sh"]
+    labels: ["sprint/SP-STORAGE", "area/infra", "priority/p1"]
+  - id: STOR-04
+    title: "storage/README.md"
+    status: completed
+    priority: p1
+    area: docs
+    artifacts: ["storage/README.md"]
+    labels: ["sprint/SP-STORAGE", "area/docs", "priority/p1"]

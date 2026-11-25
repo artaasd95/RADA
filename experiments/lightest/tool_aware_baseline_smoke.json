@@ -1,0 +1,30 @@
+{
+  "sprint": "S16",
+  "task": "S16-01",
+  "date": "2026-07-17",
+  "experiment": "tool_aware_vs_hold_policy_smoke",
+  "environment": {
+    "python": "3.9",
+    "platform": "win32",
+    "note": "Integration test requires Python 3.11+ (StrEnum). Unit metrics tests passed on 3.9."
+  },
+  "policies": {
+    "tool_aware": {
+      "class": "ToolAwarePolicy",
+      "expected_tool_calls_min": 4,
+      "tools": ["action_proposer", "risk_calculator", "constraint_checker", "outcome_evaluator", "feedback_generator"]
+    },
+    "baseline": {
+      "class": "HoldPolicy",
+      "expected_tool_calls": 0
+    }
+  },
+  "verification": {
+    "unit_metrics_tests": "passed",
+    "integration_test_decision_with_tools": "blocked_py39",
+    "code_verified": "src/rada/policies/tool_aware_policy.py chains 5 tools"
+  },
+  "blockers": [
+    "Run full integration comparison on Python 3.11+ CI environment"
+  ]
+}

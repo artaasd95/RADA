@@ -1,0 +1,77 @@
+# Context management, React dashboard, and logo placeholders (2026-06-12).
+# Set `status: completed` to close seeded GitHub issues during sync.
+---
+version: 2
+archived: true
+sprint: CTX-UI-LOGO
+sprint_start: 2026-06-12
+sprint_target_end: 2026-06-12
+repo: artaasd95/RADA
+issues:
+  - id: CUL-01
+    title: "Token-budget context manager with per-model registry in llm_integration"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "Context management"
+    due: 2026-06-12
+    labels:
+      - "sprint/CTX-UI-LOGO"
+      - "area/llm"
+      - "type/feature"
+      - "priority/p1"
+    depends_on: []
+    acceptance:
+      - "configs/model_context.yaml maps model IDs to context_window and reserve_output_tokens"
+      - "ContextBudget.assemble packs prioritized segments and prevents overflow"
+      - "Adapters resolve max_tokens from budget instead of hard-coded 256"
+      - "Unit tests in tests/unit/test_context_management.py pass"
+    artifacts:
+      - "src/rada/llm_integration/context.py"
+      - "configs/model_context.yaml"
+      - "docs/context-management.md"
+
+  - id: CUL-02
+    title: "React+Vite+Tailwind dashboard with dark theme and docker compose service"
+    status: completed
+    priority: p1
+    area: frontend
+    milestone: "RADA web UI"
+    due: 2026-06-12
+    labels:
+      - "sprint/CTX-UI-LOGO"
+      - "area/frontend"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - CUL-01
+    acceptance:
+      - "dashboard/ builds with npm run build"
+      - "Pages: Overview, Decisions, Review Queue, Audit export"
+      - "rada-dashboard service in docker-compose.prod.yml on port 5173"
+      - "Dark theme default with toggle"
+    artifacts:
+      - "dashboard/"
+      - "docker-compose.prod.yml"
+
+  - id: CUL-03
+    title: "Placeholder logo PNG for README, MkDocs, and dashboard"
+    status: completed
+    priority: p2
+    area: docs
+    milestone: "Branding"
+    due: 2026-06-12
+    labels:
+      - "sprint/CTX-UI-LOGO"
+      - "area/docs"
+      - "type/chore"
+      - "priority/p2"
+    depends_on: []
+    acceptance:
+      - "assets/logo.png is a real 512x512 PNG placeholder"
+      - "README and mkdocs.yml reference the logo"
+      - "dashboard/public/logo.png used in header"
+    artifacts:
+      - "assets/logo.png"
+      - "dashboard/public/logo.png"
+      - "mkdocs.yml"

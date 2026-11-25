@@ -1,0 +1,153 @@
+# S2 — Brain & brakes (Weeks 3–5). ScenarioReasoner + TailWarp adapters, full decision loop.
+# Status: `ongoing` or `completed` only (sync script). Omit = ongoing.
+# S2-01/S2-02: mock/stub adapters satisfy MVP; live third-party wiring tracked in S2-06.
+---
+version: 2
+archived: true
+sprint: S2
+sprint_start: 2026-06-12
+sprint_target_end: 2026-07-02
+repo: artaasd95/RADA
+issues:
+  - id: S2-01
+    title: "Implement ScenarioReasonerAdapter behind BaseReasoner"
+    status: completed
+    priority: p1
+    area: adapters
+    milestone: "R2 — Brain & brakes"
+    due: 2026-06-18
+    labels:
+      - "sprint/S2"
+      - "ws3:adapters"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S1-06
+    acceptance:
+      - "src/rada/adapters/scenario_reasoner.py wraps scenario-reasoner-lm (or thin mock with same contract)"
+      - "Returns structured scenarios mapped to DecisionTrace fields"
+      - "Contract tests with recorded fixture responses; timeout returns safe fallback trace"
+    artifacts:
+      - "src/rada/adapters/scenario_reasoner.py"
+      - "tests/unit/test_scenario_reasoner_adapter.py"
+      - "tests/fixtures/scenario_reasoner/"
+    note: >
+      MVP ships mock/stub adapter with the same contract; live scenario-reasoner-lm HTTP
+      is not on the hot decision path. Follow-up: S2-06 integration gate.
+
+  - id: S2-02
+    title: "Implement TailwarpOptimizerAdapter behind BaseRiskOptimizer"
+    status: completed
+    priority: p1
+    area: adapters
+    milestone: "R2 — Brain & brakes"
+    due: 2026-06-22
+    labels:
+      - "sprint/S2"
+      - "ws3:adapters"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S1-06
+    acceptance:
+      - "src/rada/adapters/tailwarp_optimizer.py scales ProposedAction to CVaR constraint"
+      - "risk_adjusted_size and cvar_impact populated on output action"
+      - "Unit tests on shock fixture prove position scaled down when tail risk exceeds limit"
+    artifacts:
+      - "src/rada/adapters/tailwarp_optimizer.py"
+      - "tests/unit/test_tailwarp_adapter.py"
+    note: >
+      MVP uses in-repo mock/stub risk optimizer; live tailwarp service deferred from hot path.
+      Follow-up: S2-06.
+
+  - id: S2-03
+    title: "Build full decision_loop with risk gate and timeout HOLD fallback"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R2 — Brain & brakes"
+    due: 2026-06-26
+    labels:
+      - "sprint/S2"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S2-01
+      - S2-02
+    acceptance:
+      - "decision_loop wires reasoner → policy stub → risk optimizer → persisted Decision"
+      - "Per-stage timeout with HOLD / no-trade fallback documented"
+      - "Hot path stays async; no blocking reflection work"
+    artifacts:
+      - "src/rada/core/decision_loop.py"
+      - "tests/unit/test_decision_loop_risk_gate.py"
+
+  - id: S2-04
+    title: "Integration test: simulated market shock to risk-adjusted action"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R2 — Brain & brakes"
+    due: 2026-06-30
+    labels:
+      - "sprint/S2"
+      - "ws1:core"
+      - "type/test"
+      - "priority/p1"
+    depends_on:
+      - S2-03
+    acceptance:
+      - "tests/integration/test_shock_to_action.py runs shock fixture end-to-end"
+      - "Assert Decision persisted with non-empty trace and scaled action size"
+      - "Demo script documents one-command local run"
+    artifacts:
+      - "tests/integration/test_shock_to_action.py"
+      - "scripts/demo_shock.py"
+
+  - id: S2-05
+    title: "Add light Docker app service to compose stack"
+    status: completed
+    priority: p1
+    area: infra
+    milestone: "R2 — Brain & brakes"
+    due: 2026-07-02
+    labels:
+      - "sprint/S2"
+      - "ws2:infra"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S2-04
+    acceptance:
+      - "Dockerfile for rada app (multi-stage, minimal image)"
+      - "docker-compose.yml includes app service depending on Redis + Postgres health"
+      - "docker compose up brings full stack; smoke test hits health endpoint"
+    artifacts:
+      - "Dockerfile"
+      - "docker-compose.yml"
+
+  - id: S2-06
+    title: "Live third-party adapter integration tests (scenario-reasoner-lm, tailwarp)"
+    status: deferred
+    priority: p2
+    area: adapters
+    milestone: "R2 — Brain & brakes"
+    due: 2026-07-09
+    labels:
+      - "sprint/S2"
+      - "ws3:adapters"
+      - "type/test"
+      - "priority/p2"
+    depends_on:
+      - S2-05
+    note: "OPT-INTEG v2.0 — not v1.0. Mock adapters (S2-01/02) are the required path. Sync skips GitHub issue creation."
+    acceptance:
+      - "Optional env flags enable live HTTP to scenario-reasoner-lm and tailwarp"
+      - "pytest marker `third_party` runs contract tests against real services (skipped in default CI)"
+      - "Hot decision_loop unchanged; integration tests only"
+    artifacts:
+      - "tests/integration/test_live_adapters.py"
+      - "docs/third-party-adapters.md"
+    note: >
+      Post-MVP gate. S2-01/S2-02 mocks keep the execution pipeline correct without external deps.

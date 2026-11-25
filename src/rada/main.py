@@ -36,11 +36,7 @@ from rada.interfaces import BaseDataStore
 from rada.observability.metrics import get_metrics
 from rada.schemas import Decision, MarketEvent
 from rada.security.auth import require_api_key
-from rada.utils.metrics import (
-    get_metrics_snapshot,
-    record_decision_processed,
-    render_prometheus_text,
-)
+from rada.utils.metrics import get_metrics_snapshot, record_decision_processed
 
 logger = logging.getLogger(__name__)
 
@@ -238,15 +234,17 @@ async def health() -> dict[str, str]:
 @app.get("/metrics", tags=["system"])
 async def metrics() -> Response:
     """Prometheus-style metrics snapshot."""
-    obs_body = get_metrics().render_prometheus()
-    legacy_body = render_prometheus_text()
-    return Response(content=obs_body + legacy_body, media_type="text/plain; version=0.0.4")
+    return Response(
+        content=get_metrics().render_prometheus(),
+        media_type="text/plain; version=0.0.4",
+    )
 
 
 @app.get("/metrics/json", tags=["system"])
 async def metrics_json() -> dict[str, object]:
     """JSON metrics snapshot for debugging."""
-    return {"legacy": get_metrics_snapshot(), "observability": get_metrics().snapshot()}
+    snap = get_metrics().snapshot()
+    return {"metrics": snap, "flat": get_metrics_snapshot()}
 
 
 @app.post("/ingest", tags=["demo"], dependencies=[Depends(require_api_key)])

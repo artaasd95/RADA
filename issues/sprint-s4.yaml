@@ -1,0 +1,129 @@
+# S4 — Hire-me demo (Weeks 9–11). Streamlit, Docker demo stack, README, video.
+# S4-03 placeholder README shipped; S4-05 = human-readable rewrite (owner). S4-04 deferred post-test.
+---
+version: 2
+archived: true
+sprint: S4
+sprint_start: 2026-07-24
+sprint_target_end: 2026-08-13
+repo: artaasd95/RADA
+issues:
+  - id: S4-01
+    title: "Streamlit dashboard for decision traces and risk visualization"
+    status: completed
+    priority: p1
+    area: frontend
+    milestone: "R4 — Demo"
+    due: 2026-07-31
+    labels:
+      - "sprint/S4"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S3-04
+    acceptance:
+      - "src/rada/demo/dashboard.py or apps/streamlit/ shows timeline of Decisions"
+      - "Risk manifold / CVaR impact slice for latest shock scenario"
+      - "Audit faithfulness scores visible per decision"
+      - "Runs against local Postgres or bundled sqlite demo DB"
+    artifacts:
+      - "apps/streamlit/dashboard.py"
+      - "docker-compose.yml"
+
+  - id: S4-02
+    title: "Production-light Docker: one-command demo stack"
+    status: completed
+    priority: p1
+    area: infra
+    milestone: "R4 — Demo"
+    due: 2026-08-04
+    labels:
+      - "sprint/S4"
+      - "ws2:infra"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S4-01
+    acceptance:
+      - "docker compose -f docker-compose.demo.yml up runs app + Redis + Postgres + Streamlit"
+      - "Documented env vars; no secrets in image layers"
+      - "Health checks on all services; README quickstart under 5 commands"
+    artifacts:
+      - "docker-compose.demo.yml"
+      - "README.md"
+
+  - id: S4-03
+    title: "README hire-me narrative and architecture overview"
+    status: completed
+    priority: p1
+    area: docs
+    milestone: "R4 — Demo"
+    due: 2026-08-08
+    labels:
+      - "sprint/S4"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p1"
+    depends_on:
+      - S4-02
+    acceptance:
+      - "README opener placeholder: How to build an AI that trades with consequences"
+      - "Architecture diagram stub, quickstart, non-goals (no live trading), link to adapters"
+      - "MVP scope and post-MVP roadmap section aligned with vault Roadmap"
+      - "docs/architecture-overview.md present as scaffold (content may be AI-draft)"
+    artifacts:
+      - "README.md"
+      - "docs/architecture-overview.md"
+    note: >
+      Placeholder/scaffold only. Human-readable rewrite is S4-05 (owner: @artaasd95).
+
+  - id: S4-04
+    title: "5-minute video demo script and recording"
+    status: deferred
+    priority: p1
+    area: docs
+    milestone: "R4 — Demo"
+    due: 2026-08-13
+    labels:
+      - "sprint/S4"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p1"
+    depends_on:
+      - S4-05
+    acceptance:
+      - "docs/demo-script.md covers shock → reasoning → risk gate → learning feedback"
+      - "Recorded video (or storyboard + slides) linked from README"
+      - "Reproducible using docker compose demo stack only"
+    artifacts:
+      - "docs/demo-script.md"
+      - "README.md"
+    note: >
+      Deferred until demo stack soak-tested and S4-05 README polish. Keep demo-script.md stub for now.
+
+  - id: S4-05
+    title: "Polish README hire-me narrative (human-readable rewrite)"
+    status: completed
+    priority: p0
+    area: docs
+    milestone: "R4 — Demo"
+    due: 2026-08-10
+    labels:
+      - "sprint/S4"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p0"
+      - "owner/artaasd95"
+    depends_on:
+      - S4-03
+    acceptance:
+      - "README opener rewritten in your voice (not AI boilerplate)"
+      - "docs/architecture-overview.md readable for hire-me audience"
+      - "Diagram and quickstart verified against docker-compose.demo.yml"
+      - "Links to adapter docs and vault Roadmap still accurate"
+    artifacts:
+      - "README.md"
+      - "docs/architecture-overview.md"
+    note: >
+      **Important — owner action:** Replace S4-03 placeholder copy before recording S4-04 video.

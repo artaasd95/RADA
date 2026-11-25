@@ -1,0 +1,63 @@
+---
+version: 2
+sprint: EXEC
+sprint_start: 2026-06-13
+sprint_target_end: 2026-06-27
+sprint_completed: 2026-07-17
+repo: artaasd95/RADA
+archived: true
+note: "Superseded by S16 (2026-07-17). Work continues in issues/sprint-s16-production-hygiene.yaml."
+issues:
+  - id: EXEC-01
+    title: "Run the lightest experiments"
+    status: completed
+    priority: p1
+    area: research
+    milestone: "Execution phase"
+    due: 2026-06-18
+    note: "Continued as S16-01 (ongoing). Smoke spec in experiments/lightest/."
+    labels: ["sprint/EXEC", "phase/execution", "type/experiment", "priority/p1"]
+    depends_on: []
+    acceptance:
+      - "Run the smallest viable experiment set for the current phase"
+      - "Capture baseline outputs and environment notes"
+      - "Record any blockers for follow-up"
+    artifacts:
+      - "experiments/lightest/"
+      - "logs/exec-baseline.md"
+
+  - id: EXEC-02
+    title: "Report and analysis"
+    status: completed
+    priority: p1
+    area: analysis
+    milestone: "Execution phase"
+    due: 2026-06-22
+    note: "Completed via S16-02. See qa/checklist.md."
+    labels: ["sprint/EXEC", "phase/execution", "type/analysis", "priority/p1"]
+    depends_on: [EXEC-01]
+    acceptance:
+      - "Summarize experiment outcomes and key findings"
+      - "Compare results against the previous phase"
+      - "Produce a concise report for the next review"
+    artifacts:
+      - "qa/checklist.md"
+      - "qa/verification.md"
+
+  - id: EXEC-03
+    title: "QA check"
+    status: completed
+    priority: p1
+    area: qa
+    milestone: "Execution phase"
+    due: 2026-06-27
+    note: "Completed via S16-02 qa/ artifacts."
+    labels: ["sprint/EXEC", "phase/execution", "type/qa", "priority/p1"]
+    depends_on: [EXEC-02]
+    acceptance:
+      - "Verify outputs, logs, and reports are consistent"
+      - "Confirm the new execution phase is ready to move forward"
+      - "Flag any unresolved issues for the next sprint"
+    artifacts:
+      - "qa/checklist.md"
+      - "qa/verification.md"

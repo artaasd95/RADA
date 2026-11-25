@@ -1,0 +1,128 @@
+# S5 — Documentation sprint (Weeks 12–13). Docs, runbooks, sample GitHub Actions YAML.
+---
+version: 2
+archived: true
+sprint: S5
+sprint_start: 2026-08-14
+sprint_target_end: 2026-08-28
+repo: artaasd95/RADA
+issues:
+  - id: S5-01
+    title: "Architecture and API reference documentation (MkDocs)"
+    status: completed
+    priority: p1
+    area: docs
+    milestone: "R5 — Docs & samples"
+    due: 2026-08-18
+    labels:
+      - "sprint/S5"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p1"
+    depends_on:
+      - S4-03
+    acceptance:
+      - "MkDocs site builds from mkdocs.yml (mkdocs build / make docs)"
+      - "API reference via mkdocstrings covers public modules under src/rada/ (schemas, interfaces, core loops, adapters, data, demo)"
+      - "Narrative pages: architecture overview, decision/reflection loop diagrams, adapter matrix, configuration"
+      - "Pydantic models documented (MarketEvent, Decision, ProposedAction, DecisionTrace)"
+      - "mkdocs build documented in README; HTML output under site/"
+      - "Cross-links from README and docs/architecture-overview.md to MkDocs index"
+    artifacts:
+      - "mkdocs.yml"
+      - "docs/index.md"
+      - "docs/api/"
+      - "docs/architecture/"
+      - "pyproject.toml"
+    note: >
+      MkDocs replaces Sphinx for this repo. No conf.py / index.rst — use mkdocs.yml + Markdown sources only.
+
+  - id: S5-02
+    title: "Operator runbook: manual deploy and recovery without GitHub Actions"
+    status: completed
+    priority: p1
+    area: docs
+    milestone: "R5 — Docs & samples"
+    due: 2026-08-21
+    labels:
+      - "sprint/S5"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p1"
+    depends_on:
+      - S5-01
+    acceptance:
+      - "docs/runbook.md covers docker compose deploy, env vars, backup, rollback"
+      - "Explicit policy: production must not depend solely on GitHub Actions"
+      - "Incident checklist for Redis/Postgres/app failure modes"
+    artifacts:
+      - "docs/runbook.md"
+
+  - id: S5-03
+    title: "Sample GitHub Actions workflows (ready-to-run, not enabled on RADA repo)"
+    status: completed
+    priority: p1
+    area: infra
+    milestone: "R5 — Docs & samples"
+    due: 2026-08-24
+    labels:
+      - "sprint/S5"
+      - "ws2:infra"
+      - "area/docs"
+      - "type/chore"
+      - "priority/p1"
+    depends_on:
+      - S5-02
+    acceptance:
+      - "samples/github-actions/ci.yml runs pytest + integration smoke when copied to .github/workflows/"
+      - "samples/github-actions/lint.yml runs ruff"
+      - "samples/github-actions/README.md explains copy-enable steps and MVP no-Actions policy"
+      - "No active .github/workflows/ committed to RADA main during MVP"
+    artifacts:
+      - "samples/github-actions/ci.yml"
+      - "samples/github-actions/lint.yml"
+      - "samples/github-actions/README.md"
+
+  - id: S5-04
+    title: "Monitoring and alerting hooks documentation"
+    status: completed
+    priority: p2
+    area: docs
+    milestone: "R5 — Docs & samples"
+    due: 2026-08-26
+    labels:
+      - "sprint/S5"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p2"
+    depends_on:
+      - S5-03
+    acceptance:
+      - "docs/monitoring.md describes metrics endpoints, log structure, alert thresholds"
+      - "Stubs or OpenTelemetry hooks documented even if minimal in MVP"
+      - "Aligns with post-MVP S9 production monitoring intent"
+    artifacts:
+      - "docs/monitoring.md"
+      - "src/rada/utils/metrics.py"
+
+  - id: S5-05
+    title: "Vault and repo documentation parity check"
+    status: completed
+    priority: p2
+    area: docs
+    milestone: "R5 — Docs & samples"
+    due: 2026-08-28
+    labels:
+      - "sprint/S5"
+      - "area/docs"
+      - "type/chore"
+      - "priority/p2"
+    depends_on:
+      - S5-04
+    acceptance:
+      - "Checklist confirms Roadmap milestones R1–R5 match shipped artifacts"
+      - "Decision-Log entries in vault reflected in repo docs/decisions.md or README"
+      - "No broken internal links in docs site or README"
+    artifacts:
+      - "docs/decisions.md"
+      - "README.md"

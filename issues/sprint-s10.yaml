@@ -1,0 +1,146 @@
+# S10 — Market state definition layer (post-MVP). Multi-method state descriptors for decision context.
+---
+version: 2
+archived: true
+sprint: S10
+sprint_start: 2026-12-19
+sprint_target_end: 2027-01-22
+repo: artaasd95/RADA
+issues:
+  - id: S10-01
+    title: "Define MarketState schema and method contracts"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R7 — Market state context"
+    due: 2026-12-24
+    labels:
+      - "sprint/S10"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S9-01
+    acceptance:
+      - "Add MarketState schema supporting normalized values, dense vectors, and embedding vectors"
+      - "Define BaseMarketStateMethod interface with fit/transform and diagnostics contract"
+      - "Document explicit scope: state definition only (no direct prediction objective)"
+    artifacts:
+      - "src/rada/schemas.py"
+      - "src/rada/interfaces.py"
+      - "docs/market-state.md"
+
+  - id: S10-02
+    title: "Implement baseline market-state methods (Hawkes, HSMM, SDE descriptors)"
+    status: completed
+    priority: p1
+    area: data
+    milestone: "R7 — Market state context"
+    due: 2026-12-31
+    labels:
+      - "sprint/S10"
+      - "ws4:data"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S10-01
+    acceptance:
+      - "Hawkes-based features expose excitation, decay, and intensity summary statistics"
+      - "HSMM-based features expose regime/posterior duration and transition diagnostics"
+      - "SDE-based descriptors expose drift/volatility and diffusion-shape signatures from rolling windows"
+    artifacts:
+      - "src/rada/market_state/methods/hawkes.py"
+      - "src/rada/market_state/methods/hsmm.py"
+      - "src/rada/market_state/methods/sde.py"
+
+  - id: S10-03
+    title: "Build market-state normalization and fusion pipeline"
+    status: completed
+    priority: p1
+    area: data
+    milestone: "R7 — Market state context"
+    due: 2027-01-07
+    labels:
+      - "sprint/S10"
+      - "ws4:data"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S10-02
+    acceptance:
+      - "Pipeline merges heterogeneous method outputs into a canonical state payload"
+      - "Normalization strategy is configurable (z-score, robust, min-max)"
+      - "Optional embedding projection path with fixed output dimension and reproducible config"
+    artifacts:
+      - "src/rada/market_state/pipeline.py"
+      - "src/rada/market_state/normalization.py"
+      - "configs/market_state/default.yaml"
+
+  - id: S10-04
+    title: "Create extensible method registry and feature toggles"
+    status: completed
+    priority: p2
+    area: backend
+    milestone: "R7 — Market state context"
+    due: 2027-01-12
+    labels:
+      - "sprint/S10"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p2"
+    depends_on:
+      - S10-03
+    acceptance:
+      - "Registry loads methods from config without editing decision-loop code"
+      - "Per-method enable/disable and weighting supported"
+      - "Fallback behavior defined when one method errors or times out"
+    artifacts:
+      - "src/rada/market_state/registry.py"
+      - "src/rada/core/market_state_service.py"
+      - "tests/unit/test_market_state_registry.py"
+
+  - id: S10-05
+    title: "Integrate market state into decision context (context-only path)"
+    status: completed
+    priority: p1
+    area: backend
+    milestone: "R7 — Market state context"
+    due: 2027-01-17
+    labels:
+      - "sprint/S10"
+      - "ws1:core"
+      - "type/feature"
+      - "priority/p1"
+    depends_on:
+      - S10-04
+    acceptance:
+      - "decision_loop and reasoner_loop receive MarketState as optional context object"
+      - "Feature flag keeps default behavior unchanged when market-state context is off"
+      - "Integration test verifies context enrichment does not bypass CVaR/risk gate"
+    artifacts:
+      - "src/rada/core/decision_loop.py"
+      - "src/rada/core/reasoner_loop.py"
+      - "tests/integration/test_market_state_context_integration.py"
+
+  - id: S10-06
+    title: "Add evaluation suite and docs for market-state quality"
+    status: completed
+    priority: p2
+    area: docs
+    milestone: "R7 — Market state context"
+    due: 2027-01-22
+    labels:
+      - "sprint/S10"
+      - "area/docs"
+      - "type/docs"
+      - "priority/p2"
+    depends_on:
+      - S10-05
+    acceptance:
+      - "Evaluation script reports stability, drift sensitivity, and compute latency per method"
+      - "Ablation report compares single-method vs fused-state context impact on decision quality proxies"
+      - "docs/market-state.md includes extension guide for adding new methods"
+    artifacts:
+      - "scripts/evaluate_market_state.py"
+      - "docs/market-state.md"
+      - "docs/spikes/market-state-ablation.md"

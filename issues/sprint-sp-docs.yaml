@@ -1,0 +1,112 @@
+version: 2
+archived: true
+sprint: SP-DOCS
+sprint_start: 2026-07-15
+sprint_target_end: 2026-08-07
+repo: artaasd95/RADA
+issues:
+- id: SP-DOCS-01
+  title: README v1.0 — standalone deploy story, calc engine, no sibling repo deps
+  status: completed
+  priority: p1
+  area: docs
+  milestone: SP-DOCS — Public docs
+  due: 2026-07-25
+  labels:
+  - sprint/SP-DOCS
+  - area/docs
+  - type/docs
+  - priority/p1
+  depends_on:
+  - SP-CALC-06
+  - SP-DEPLOY-05
+  artifacts:
+  - README.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-DOCS-02
+  title: CONTRIBUTING.md — pyproject dev, pytest, docker compose demo
+  status: completed
+  priority: p1
+  area: docs
+  milestone: SP-DOCS — Public docs
+  due: 2026-07-18
+  labels:
+  - sprint/SP-DOCS
+  - area/docs
+  - type/docs
+  - priority/p1
+  artifacts:
+  - CONTRIBUTING.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-DOCS-03
+  title: MkDocs — extend existing site with calc, observability, audit, runtime chapters
+  status: completed
+  priority: p2
+  area: docs
+  milestone: SP-DOCS — MkDocs
+  due: 2026-08-04
+  labels:
+  - sprint/SP-DOCS
+  - area/docs
+  - type/docs
+  - priority/p2
+  depends_on:
+  - SP-OBS-06
+  - RT-08
+  artifacts:
+  - mkdocs.yml
+  - docs/index.md
+  note: Completed 2026-06-11 on develop (portfolio execution plan).
+- id: SP-DOCS-05
+  title: docs/conf.py — Sphinx + Furo + autodoc + mathjax + myst-parser setup
+  status: completed
+  priority: p1
+  area: docs
+  milestone: SP-DOCS — Sphinx API
+  due: 2026-06-15
+  labels:
+  - sprint/SP-DOCS
+  - area/docs
+  - type/docs
+  - priority/p1
+  artifacts:
+  - docs/conf.py
+- id: SP-DOCS-06
+  title: docs/api/*.rst — calc, core, policies, audit, search, feedback stubs
+  status: completed
+  priority: p1
+  area: docs
+  milestone: SP-DOCS — Sphinx API
+  due: 2026-06-15
+  labels:
+  - sprint/SP-DOCS
+  - area/docs
+  - type/docs
+  - priority/p1
+  depends_on:
+  - SP-DOCS-05
+  artifacts:
+  - docs/api/index.rst
+  - docs/api/calc.rst
+  - docs/api/core.rst
+  - docs/api/policies.rst
+  - docs/api/audit.rst
+  - docs/api/search.rst
+  - docs/api/feedback.rst
+- id: SP-DOCS-07
+  title: docs/requirements-docs.txt + make html passes CI
+  status: completed
+  priority: p2
+  area: docs
+  milestone: SP-DOCS — Sphinx API
+  due: 2026-06-18
+  labels:
+  - sprint/SP-DOCS
+  - area/docs
+  - type/docs
+  - priority/p2
+  depends_on:
+  - SP-DOCS-06
+  artifacts:
+  - docs/requirements-docs.txt
+  - docs/Makefile

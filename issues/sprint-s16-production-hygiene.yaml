@@ -1,0 +1,145 @@
+---
+version: 2
+sprint: S16
+name: Execution + Production Hygiene
+sprint_start: 2026-07-17
+sprint_target_end: 2026-07-31
+repo: artaasd95/RADA
+archived: false
+issues:
+  - id: S16-01
+    title: "Run lightest tool-aware vs baseline policy experiment"
+    status: ongoing
+    priority: p0
+    area: research
+    milestone: "S16 - Production Hygiene"
+    due: 2026-07-20
+    labels: ["sprint/S16", "phase/execution", "type/experiment", "priority/p0"]
+    depends_on: []
+    note: "Supersedes EXEC-01. Compare ToolAwarePolicy vs default policy on fixture ingest."
+    acceptance:
+      - "Run smallest viable experiment set for post-S15 phase"
+      - "Capture baseline outputs and environment notes"
+      - "Record blockers for follow-up"
+    artifacts:
+      - "experiments/lightest/"
+      - "logs/exec-baseline.md"
+
+  - id: S16-02
+    title: "Write execution summary report + QA checklist"
+    status: completed
+    priority: p0
+    area: analysis
+    milestone: "S16 - Production Hygiene"
+    due: 2026-07-24
+    labels: ["sprint/S16", "phase/execution", "type/analysis", "priority/p0"]
+    depends_on: [S16-01]
+    note: "Supersedes EXEC-02 and EXEC-03."
+    acceptance:
+      - "Summarize experiment outcomes and key findings"
+      - "Compare results against S15 tool-layer baseline"
+      - "Produce qa/checklist.md and qa/verification.md"
+    artifacts:
+      - "reports/execution-summary.md"
+      - "qa/checklist.md"
+      - "qa/verification.md"
+
+  - id: S16-03
+    title: "Consolidate dual metrics registries"
+    status: completed
+    priority: p0
+    area: backend
+    milestone: "S16 - Production Hygiene"
+    due: 2026-07-26
+    labels: ["sprint/S16", "area/observability", "type/refactor", "priority/p0"]
+    depends_on: []
+    acceptance:
+      - "Single metrics registry backs /metrics endpoint"
+      - "utils/metrics.py delegates to observability/metrics.py (no double-counting)"
+      - "Existing unit tests pass"
+    artifacts:
+      - "src/rada/observability/metrics.py"
+      - "src/rada/utils/metrics.py"
+
+  - id: S16-04
+    title: "Add RADAError hierarchy + structured FastAPI handlers"
+    status: queued
+    priority: p1
+    area: backend
+    milestone: "S16 - Production Hygiene"
+    due: 2026-07-28
+    labels: ["sprint/S16", "area/backend", "type/feature", "priority/p1"]
+    depends_on: []
+    acceptance:
+      - "RADAError base + domain subclasses defined"
+      - "FastAPI exception handlers return consistent error envelope"
+      - "Unit tests cover at least 3 error types"
+    artifacts:
+      - "src/rada/errors.py"
+      - "tests/unit/test_errors.py"
+
+  - id: S16-05
+    title: "Rate limiting middleware on /ingest"
+    status: queued
+    priority: p1
+    area: backend
+    milestone: "S16 - Production Hygiene"
+    due: 2026-07-29
+    labels: ["sprint/S16", "area/security", "type/feature", "priority/p1"]
+    depends_on: []
+    acceptance:
+      - "Token-bucket rate limit on /ingest (configurable via env)"
+      - "429 response with Retry-After header on limit exceeded"
+      - "Integration test verifies limit behavior"
+    artifacts:
+      - "src/rada/security/rate_limit.py"
+      - "tests/integration/test_rate_limit.py"
+
+  - id: S16-06
+    title: "Convert RuntimeSettings to Pydantic BaseSettings"
+    status: queued
+    priority: p1
+    area: backend
+    milestone: "S16 - Production Hygiene"
+    due: 2026-07-30
+    labels: ["sprint/S16", "area/config", "type/refactor", "priority/p1"]
+    depends_on: []
+    acceptance:
+      - "RuntimeSettings uses pydantic-settings BaseSettings"
+      - "Invalid env values fail fast at startup"
+      - "Existing config tests updated"
+    artifacts:
+      - "src/rada/config/settings.py"
+
+  - id: S16-07
+    title: "React dashboard decision detail page + review queue filters"
+    status: queued
+    priority: p2
+    area: frontend
+    milestone: "S16 - Production Hygiene"
+    due: 2026-07-31
+    labels: ["sprint/S16", "area/ui", "type/feature", "priority/p2"]
+    depends_on: []
+    acceptance:
+      - "Decision detail page shows tool_calls trace"
+      - "Review queue supports status and date filters"
+      - "Dashboard build passes in CI"
+    artifacts:
+      - "dashboard/src/pages/DecisionDetail.tsx"
+      - "dashboard/src/pages/ReviewQueue.tsx"
+
+  - id: S16-08
+    title: "Sprint YAML index and vault mirror complete"
+    status: completed
+    priority: p0
+    area: docs
+    milestone: "S16 - Production Hygiene"
+    due: 2026-07-17
+    labels: ["sprint/S16", "area/docs", "type/chore", "priority/p0"]
+    depends_on: []
+    acceptance:
+      - "issues/ mirrors projects-management vault sprint seeds"
+      - "issues/README.md indexes all sprints"
+    artifacts:
+      - "issues/README.md"
+      - "issues/sprint-s16-production-hygiene.yaml"
